@@ -31,6 +31,7 @@
 </div>
 
 ## 🔥 最新动态
+- **[2026/06/02]** 🎉 由混元联合 **SSV 数字文化实验室**、**SSV 技术架构部**，并携手**故宫博物院**与**安阳师范学院**共同推出 [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR)（[论文](https://arxiv.org/abs/2605.11960)）——涵盖"汉字七体"演变轨迹的古文感知开源评测集；同时发布 [ChartArena](https://github.com/pspdada/ChartArena)（[论文](https://arxiv.org/abs/2606.01348)）——支持多种图表类型的图表解析评测基准。欢迎大家评测使用并提出宝贵意见！
 - **[2026/05/11]** 🎉 我们在文档解析（Wild-OmniDocBench）与文本图像机器翻译（MMTIT-Bench）方向的两项 Benchmark 已正式开源：[Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench)、[MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench)，欢迎大家评测使用并提出宝贵意见！
 - **[2026/04/08]** 🎉 我们在文档解析与文本图像机器翻译方向的两项研究成果被CVPR 2026 Main Conference正式接收！详见论文：[2603.23885](https://arxiv.org/abs/2603.23885)、[2603.23896](https://arxiv.org/abs/2603.23896)。
 - **[2026/01/13]** ⭐ 我们发布了稳定的官方[在线Demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh)页面, 欢迎试用！
@@ -407,6 +408,22 @@ cd Hunyuan-OCR-master/Hunyuan-OCR-hf && python run_hy_ocr.py
       year={2026},
       journal={arXiv preprint arXiv:2603.23885},
       url={https://arxiv.org/abs/2603.23885},
+}
+
+@misc{li2026chronicles,
+      title={Chronicles-OCR: A Cross-Temporal Perception Benchmark for the Evolutionary Trajectory of Chinese Characters},
+      author={Gengluo Li and Shangping Peng and Xingyu Wan and Chengquan Zhang and Hao Feng and Xin Xu and Pian Wu and Bang Li and Zengmao Ding and Yongge Liu and Yipei Ye and Yang Yang and Zhan Shu and Guojun Yan and Zhe Li and Can Ma and Weiping Wang and Yu Zhou and Han Hu},
+      year={2026},
+      journal={arXiv preprint arXiv:2605.11960},
+      url={https://arxiv.org/abs/2605.11960},
+}
+
+@misc{peng2026chartarena,
+      title={ChartArena: Benchmarking Chart Parsing across Languages, Scenarios, and Formats},
+      author={Shangpin Peng and Gengluo Li and Xingyu Wan and Chengquan Zhang and Hao Feng and Binghong Wu and Huawen Shen and Weinong Wang and Ziyi Cai and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2606.01348},
+      url={https://arxiv.org/abs/2606.01348},
 }
 
 ```

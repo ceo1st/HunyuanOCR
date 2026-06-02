@@ -32,6 +32,7 @@
 </div>
 
 ## 🔥 News
+- **[2026/06/02]** 🎉 In collaboration with the **SSV Digital Culture Lab** and the **SSV Technical Architecture Department**, jointly with the **Palace Museum** and **Anyang Normal University**, we have released [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR) ([paper](https://arxiv.org/abs/2605.11960)) — an open-source ancient-text perception benchmark covering the evolutionary trajectory of the "Seven Chinese Scripts". We have also released [ChartArena](https://github.com/pspdada/ChartArena) ([paper](https://arxiv.org/abs/2606.01348)) — a new chart-parsing benchmark supporting diverse chart types. Welcome to evaluate and provide your valuable feedback!
 - **[2026/05/11]** 🎉 We have officially open-sourced two benchmarks on document parsing and text-image machine translation: [Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench) and [MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench). Welcome to evaluate and provide your valuable feedback!
 - **[2026/04/08]** 🎉 Our works on document parsing and text-image machine translation have been accepted to the CVPR 2026 Main Conference! Check out the papers: [Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training](https://arxiv.org/abs/2603.23885) and [MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation](https://arxiv.org/abs/2603.23896).
 - **[2026/01/13]** ⭐ We have released a stable official [online demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh), feel free to try it out!
@@ -410,6 +411,22 @@ Our model is able to translate images of minor languages ​​taken into Chines
       year={2026},
       journal={arXiv preprint arXiv:2603.23885},
       url={https://arxiv.org/abs/2603.23885},
+}
+
+@misc{li2026chronicles,
+      title={Chronicles-OCR: A Cross-Temporal Perception Benchmark for the Evolutionary Trajectory of Chinese Characters},
+      author={Gengluo Li and Shangping Peng and Xingyu Wan and Chengquan Zhang and Hao Feng and Xin Xu and Pian Wu and Bang Li and Zengmao Ding and Yongge Liu and Yipei Ye and Yang Yang and Zhan Shu and Guojun Yan and Zhe Li and Can Ma and Weiping Wang and Yu Zhou and Han Hu},
+      year={2026},
+      journal={arXiv preprint arXiv:2605.11960},
+      url={https://arxiv.org/abs/2605.11960},
+}
+
+@misc{peng2026chartarena,
+      title={ChartArena: Benchmarking Chart Parsing across Languages, Scenarios, and Formats},
+      author={Shangpin Peng and Gengluo Li and Xingyu Wan and Chengquan Zhang and Hao Feng and Binghong Wu and Huawen Shen and Weinong Wang and Ziyi Cai and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2606.01348},
+      url={https://arxiv.org/abs/2606.01348},
 }
 ```
 
