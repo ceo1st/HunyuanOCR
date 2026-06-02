@@ -31,7 +31,7 @@
 </div>
 
 ## 🔥 最新动态
-- **[2026/06/02]** 🎉 由混元联合 **SSV 数字文化实验室**、**SSV 技术架构部**，并携手**故宫博物院**与**安阳师范学院**共同推出 [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR)（[论文](https://arxiv.org/abs/2605.11960)）——涵盖"汉字七体"演变轨迹的古文感知开源评测集；同时发布 [ChartArena](https://github.com/pspdada/ChartArena)（[论文](https://arxiv.org/abs/2606.01348)）——支持多种图表类型的图表解析评测基准。欢迎大家评测使用并提出宝贵意见！
+- **[2026/06/02]** 🎉 由混元联合 **SSV 数字文化实验室**、**SSV 技术架构部**，并携手**故宫博物院**与**安阳师范学院**共同推出 [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR)（[arXiv](https://arxiv.org/abs/2605.11960)），涵盖"汉字七体"演变轨迹的古文感知开源评测集；同时发布 [ChartArena](https://github.com/pspdada/ChartArena)（[arXiv](https://arxiv.org/abs/2606.01348)），支持多种图表类型的图表解析评测基准。欢迎大家评测使用并提出宝贵意见！
 - **[2026/05/11]** 🎉 我们在文档解析（Wild-OmniDocBench）与文本图像机器翻译（MMTIT-Bench）方向的两项 Benchmark 已正式开源：[Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench)、[MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench)，欢迎大家评测使用并提出宝贵意见！
 - **[2026/04/08]** 🎉 我们在文档解析与文本图像机器翻译方向的两项研究成果被CVPR 2026 Main Conference正式接收！详见论文：[2603.23885](https://arxiv.org/abs/2603.23885)、[2603.23896](https://arxiv.org/abs/2603.23896)。
 - **[2026/01/13]** ⭐ 我们发布了稳定的官方[在线Demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh)页面, 欢迎试用！
