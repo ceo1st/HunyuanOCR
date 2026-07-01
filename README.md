@@ -15,7 +15,7 @@
 
 **HunyuanOCR-1.5** is a lightweight, end-to-end OCR-specialized vision-language model. It targets a
 broad range of text-centric visual tasks and unifies **document parsing, text spotting, information
-extraction, text-image translation, and multi-image document understanding** within a single
+extraction, text-image translation** within a single
 end-to-end VLM.
 
 Building upon the validated lightweight architecture of HunyuanOCR-1.0, HunyuanOCR-1.5 does **not**
