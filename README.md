@@ -230,24 +230,29 @@ curl -sf http://127.0.0.1:8000/v1/models
 tail -f vllm_ar_8000.log
 ```
 
-**Minimal single-image client** — send one image via the shipped script:
+**Minimal single-image client** — send one image via the shipped script.
+It matches the sampling params and streaming tail-repetition early-stop of the
+production `vllm/infer_vllm_8gpu.py`, so single-case results are byte-consistent
+with the internal bench pipeline:
 
 ```bash
 python inference/infer_vllm_client.py \
     --host 127.0.0.1 --port 8000 \
     --model tencent/HunyuanOCR-v2 \
     --image /path/to/document.png
+# add --no-stream to disable streaming + early-stop
 ```
 
-Or hand-written with the OpenAI SDK (mirrors what `infer_vllm_client.py` does):
+Or hand-written with the OpenAI SDK (mirrors what `infer_vllm_client.py` does,
+without the streaming early-stop):
 
 ```python
-import base64, mimetypes
+import base64
 from openai import OpenAI
 
 def data_url(p):
-    mime = mimetypes.guess_type(p)[0] or "image/jpeg"
-    return f"data:{mime};base64,{base64.b64encode(open(p,'rb').read()).decode()}"
+    # Mime is fixed to image/jpeg, matching vllm/infer_vllm_8gpu.py
+    return f"data:image/jpeg;base64,{base64.b64encode(open(p,'rb').read()).decode()}"
 
 client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:8000/v1")
 resp = client.chat.completions.create(
