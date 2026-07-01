@@ -1,12 +1,6 @@
 <div align="center">
 
-[中文阅读](./README_zh.md)
-
-</div>
-
-<div align="center">
-
-# HunyuanOCR
+# HunyuanOCR-1.5: Towards Efficient and Effective E2E OCR
 
 </div>
 
@@ -14,424 +8,262 @@
  <img src="./assets/hyocr-head-img.png" width="80%"/> <br>
 </p>
 
-
 <p align="center">
-<a href="https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh"><b>🎯 Demo</b></a> |
-<a href="https://huggingface.co/tencent/HunyuanOCR"><b>📥 Model Download</b></a> |
-<a href="https://arxiv.org/abs/2511.19575"><b>📄 Technical Report</b></a>
+<a href="https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh"><b>🎯 Online Demo</b></a> |
+<a href="https://huggingface.co/tencent/HunyuanOCR"><b>📥 Model Download</b></a>
 </p>
 
-## 🤝 Join Our Community
+---
 
-<div align="center">
+> ℹ️ This branch (`develop`) hosts the **HunyuanOCR-1.5** open-source training & inference toolkit.
+> For the original HunyuanOCR 1.0 release, please switch to the `main` branch or refer to
+> [`README_v1.0.md`](./README_v1.0.md) / [`README_zh_v1.0.md`](./README_zh_v1.0.md).
 
-| Wechat Discussion Group | Discord Group |
-| :---: | :---: |
-| <img src="./assets/qrcode_for_hunyuanocr_wechat.jpg" width="150"> | [Join HunyuanOCR Discord](https://discord.gg/XeD3p2MRDk) |
-
-</div>
-
-## 🔥 News
-- **[2026/06/02]** 🎉 We have released two new benchmarks. [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR) ([arXiv](https://arxiv.org/abs/2605.11960)), an open-source ancient-text perception benchmark covering the evolutionary trajectory of the "Seven Chinese Scripts", is jointly built by the **SSV Digital Culture Lab** and the **SSV Technical Architecture Department**, together with the **Palace Museum** and **Anyang Normal University**. We have also released [ChartArena](https://github.com/pspdada/ChartArena) ([arXiv](https://arxiv.org/abs/2606.01348)), a new chart-parsing benchmark supporting diverse chart types. Welcome to evaluate and provide your valuable feedback!
-- **[2026/05/11]** 🎉 We have officially open-sourced two benchmarks on document parsing and text-image machine translation: [Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench) and [MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench). Welcome to evaluate and provide your valuable feedback!
-- **[2026/04/08]** 🎉 Our works on document parsing and text-image machine translation have been accepted to the CVPR 2026 Main Conference! Check out the papers: [Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training](https://arxiv.org/abs/2603.23885) and [MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation](https://arxiv.org/abs/2603.23896).
-- **[2026/01/13]** ⭐ We have released a stable official [online demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh), feel free to try it out!
-- **[2025/11/28]** 🛠️ We fixed vLLM inference bugs and hyperparameter configuration issues such as system prompt. It is recommended to use the latest vLLM installation steps and the [inference script](https://github.com/Tencent-Hunyuan/HunyuanOCR/blob/main/Hunyuan-OCR-master/Hunyuan-OCR-vllm/run_hy_ocr.py) for performance testing. Currently, there is still a certain accuracy difference between Transformers and the vLLM framework (we are working on fixing this).
-- **[2025/11/25]** 📝 Inference code and model weights publicly available.
-
+---
 
 ## 📖 Introduction
-**HunyuanOCR** stands as a leading end-to-end OCR expert VLM powered by Hunyuan's native multimodal architecture. With a remarkably lightweight 1B parameter design, it has achieved multiple state-of-the-art benchmarks across the industry. The model demonstrates mastery in **complex multilingual document parsing** while excelling in practical applications including **text spotting, open-field information extraction, video subtitle extraction, and photo translation**.
 
+**HunyuanOCR-1.5** is the next iteration of Tencent's end-to-end OCR expert VLM, aiming at
+**simultaneously higher accuracy and higher inference efficiency** than 1.0. Key upgrades include:
 
-## ✨ Key Features
+- 🧠 **Stronger E2E OCR quality** — improved document parsing, text spotting, information extraction,
+  photo translation and video subtitle extraction, with a single-instruction / single-inference
+  interface consistent with 1.0.
+- ⚡ **DFlash speculative decoding** — an MTP-style draft head trained jointly / from-scratch on
+  packed OCR sequences, delivering up to **2.1× end-to-end speedup** on real-world documents with
+  no measurable output-quality loss (< 0.15% token diff vs AR).
+- 📚 **Full open-source training pipeline** — SFT of the HunyuanOCR base model, DFlash draft
+  training (from-scratch and continue-finetune), and an efficient token-count-then-pack data
+  pipeline for large-scale packed sequence training.
+- 🚀 **vLLM production deployment** — a single command deploys HunyuanOCR-1.5 (± DFlash) as an
+  OpenAI-compatible chat/completions endpoint.
 
-- 💪 **Efficient Lightweight Architecture**: Built on Hunyuan's native multimodal architecture and training strategy, achieving SOTA performance with only 1B parameters, significantly reducing deployment costs.
+### 🔥 DFlash speedup at a glance
 
-- 📑 **Comprehensive OCR Capabilities**: A single model covering classic OCR tasks including text detection and recognition, complex document parsing, open-field information extraction and video subtitle extraction, while supporting end-to-end photo translation and document QA.
+| Metric | HunyuanOCR base (AR) | HunyuanOCR + DFlash | Speedup |
+|:--|--:|--:|--:|
+| Avg latency / image | 3.03 s | **1.41 s** | **2.14×** |
+| Token/s (end-to-end) | 466 | **1002** | 2.15× |
+| Page/s | 0.33 | **0.71** | 2.14× |
+| Output token diff vs AR | — | < 0.15% | ~lossless |
 
-- 🚀 **Ultimate Usability**: Deeply embraces the "end-to-end" philosophy of large models - achieving SOTA results with single instruction and single inference, offering greater efficiency and convenience compared to industry cascade solutions.
+*Evaluated on 930 real-world document / PPT / book / textbook images at concurrency=1,
+max_tokens=8000, on a single NVIDIA H20 (80GB). See [`docs/benchmark.md`](docs/benchmark.md)
+for the full 8-way OCR comparison.*
 
-- 🌏 **Extensive Language Support**: Robust support for over 100 languages, excelling in both single-language and mixed-language scenarios across various document types.
+---
 
-<div align="left">
-  <img src="./assets/hyocr-pipeline-v1.png" alt="HunyuanOCR framework" width="80%">
-</div>
+## ⚙️ Environment
 
+- Python 3.10+
+- PyTorch 2.1+ (CUDA 12.1 recommended)
+- transformers 4.57+
+- DeepSpeed 0.14+
+- vLLM 0.23.1rc1 + DFlash patch (only required for DFlash inference — see [`docs/inference.md`](docs/inference.md))
 
+Install common training / inference dependencies:
 
-
-## 🛠️ Dependencies and Installation
-
-### System Requirements
-- 🖥️ Operating System: Linux
-- 🐍 Python: 3.12+ (recommended and tested)
-- ⚡ CUDA: 12.9
-- 🔥 PyTorch: 2.7.1
-- 🎮 GPU: NVIDIA GPU with CUDA support
-- 🧠 GPU Memory: 20GB (for vLLM)
-- 💾 Disk Space: 6GB
-
-## 🚀 Quick Start with vLLM (⭐ Recommended)
-
-- **[HunyuanOCR Usage Guide](https://docs.vllm.ai/projects/recipes/en/latest/Tencent-Hunyuan/HunyuanOCR.html)**
-
-### Installation
 ```bash
-pip install vllm>=0.12.0
 pip install -r requirements.txt
+# flash-attn requires manual build:
+pip install flash-attn --no-build-isolation
 ```
 
-Note: We suggest to install [cuda-compat-12-9](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/):
+---
+
+## 🚀 Training
+
+All training scripts live under `scripts/` and share `scripts/env_common.sh` for distributed env
+variables. Multi-node training is supported via the standard
+`NNODES` / `NODE_RANK` / `MASTER_ADDR` / `MASTER_PORT` env vars.
+
+### 1. Prepare packed training data
+
+We tokenize each raw OCR JSONL, then pack multiple samples up to `packed_max_length=20480`
+tokens into single sequences to maximize GPU utilization.
+
+**Step 1** — fill in `configs/data_list.txt` with one absolute path per line, each pointing to a
+raw OCR JSONL file. The JSONL schema is documented in [`docs/data_format.md`](docs/data_format.md).
+
+**Step 2** — run the multi-process count-and-pack pipeline:
+
 ```bash
-sudo dpkg -i cuda-compat-12-9_575.57.08-0ubuntu1_amd64.deb
-echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.9/compat:$LD_LIBRARY_PATH' >> ~/.bashrc
-source ~/.bashrc
-# verify cuda-compat-12-9
-ls /usr/local/cuda-12.9/compat
+MODEL_PATH=/path/to/HunyuanOCR/base/model \
+INPUT_LIST=./configs/data_list.txt \
+PACK_LEN=20480 \
+NUM_PROCESSES=32 \
+THREADS_PER_PROCESS=8 \
+bash scripts/pack_data.sh
 ```
 
-### Model Deploy
+Output: `./data/parsing_packed_20480.jsonl` — a single sequence-packed JSONL ready for training.
+
+The pipeline is implemented in [`tools/pipeline_count_and_pack.py`](tools/pipeline_count_and_pack.py)
+and [`tools/pack_from_counted.py`](tools/pack_from_counted.py).
+
+### 2. SFT the HunyuanOCR base model
+
+Full end-to-end SFT (vision encoder + MLP + LLM) on packed OCR sequences.
+Default profile: `lr=2e-5`, `epochs=5`, per-GPU batch=1, `packed_max_length=20480`.
+
 ```bash
-vllm serve tencent/HunyuanOCR \
-    --no-enable-prefix-caching \
-    --mm-processor-cache-gb 0 \
-    --gpu-memory-utilization 0.2
+MODEL_PATH=/path/to/HunyuanOCR/base/model \
+TRAIN_DATA=./data/parsing_packed_20480.jsonl \
+NPROC_PER_NODE=8 \
+bash scripts/sft_base.sh
 ```
 
-### Model Inference
+Entry: [`train/train_hunyuan.py`](train/train_hunyuan.py).
+Full argument list: see [`docs/training.md`](docs/training.md).
+
+### 3. Train the DFlash draft model — from scratch
+
+Trains a small MTP-style draft that predicts K speculative tokens for HunyuanOCR.
+Default profile: `lr=1e-4`, `epochs=2`, `num_mask_tokens=16`, `sample_block_num=8`.
+
+```bash
+MODEL_PATH=/path/to/HunyuanOCR/base/model \
+TRAIN_DATA=./data/parsing_packed_20480.jsonl \
+NPROC_PER_NODE=8 \
+bash scripts/sft_dflash.sh
+```
+
+Entry: [`train/train_draft.py`](train/train_draft.py).
+
+### 4. Continue-finetune from an existing DFlash checkpoint
+
+Use this when adapting a released DFlash draft to a smaller / domain-specific dataset.
+Recommended profile (v3): `lr=2e-5`, `epochs=10`, `warmup_ratio=0.05`, `save_steps=500`.
+
+> Empirical result on 14.7k packs: v3 continue-finetune beats v1 (1M packs from-scratch) on
+> both acceptance rate (**42% vs 33%**) and end-to-end speedup (**2.14× vs 1.92×**).
+
+```bash
+MODEL_PATH=/path/to/HunyuanOCR/base/model \
+DFLASH_INIT=/path/to/hyocr_dflash/existing_checkpoint \
+TRAIN_DATA=./data/parsing_packed_20480.jsonl \
+NPROC_PER_NODE=8 \
+bash scripts/sft_dflash_finetune.sh
+```
+
+Entry: [`train/train_draft_from_dflash.py`](train/train_draft_from_dflash.py).
+
+---
+
+## 🧪 Inference
+
+Two paths are provided: **HuggingFace transformers** (single-image, easy to hack, recommended for
+debugging) and **vLLM** (production serving, OpenAI-compatible, required for real DFlash speedup).
+
+### A. HuggingFace transformers (single-image debug)
+
+**Base model:**
+
+```bash
+python inference/infer_base.py \
+    --model /path/to/HunyuanOCR/base/model \
+    --image /path/to/document.png \
+    --max-new-tokens 8000
+```
+
+**Base model + DFlash draft (correctness check):**
+
+```bash
+python inference/infer_dflash.py \
+    --model /path/to/HunyuanOCR/base/model \
+    --dflash-model ./hyocr_dflash/ \
+    --image /path/to/document.png \
+    --num-spec-tokens 15
+```
+
+The default OCR prompt is:
+
+```
+提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，
+表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
+```
+
+Override with `--prompt "..."`. Both scripts print latency, completion tokens and tok/s.
+
+> ℹ️ `infer_dflash.py` is designed for correctness verification of a DFlash checkpoint on a
+> single image. **The real ~2.1× speedup is only realized under vLLM** (see below), because
+> transformers has no CUDA-graph / batched speculative decoding kernel.
+
+### B. vLLM production serving (OpenAI-compatible)
+
+**Autoregressive baseline** (HunyuanOCR without DFlash):
+
+```bash
+MODEL_PATH=/path/to/HunyuanOCR/base/model \
+PORT=8000 GPU=0 GPU_MEM_UTIL=0.85 \
+MEDIA_PATH=/tmp \
+bash inference/serve_ar.sh
+```
+
+**DFlash speculative decoding** (recommended, ~2.1× end-to-end speedup):
+
+```bash
+MODEL_PATH=/path/to/HunyuanOCR/base/model \
+DFLASH_PATH=./hyocr_dflash \
+PORT=8001 GPU=1 GPU_MEM_UTIL=0.85 \
+NUM_SPEC_TOKENS=15 \
+MEDIA_PATH=/tmp \
+bash inference/serve_dflash.sh
+```
+
+Both endpoints expose the standard vLLM OpenAI-compatible routes at
+`http://<host>:<port>/v1/chat/completions`. Wait for `Application startup complete` in the log
+before sending requests:
+
+```bash
+tail -f dflash_server_8001.log
+```
+
+Minimal client example (Python):
+
 ```python
-from vllm import LLM, SamplingParams
-from PIL import Image
-from transformers import AutoProcessor
+from openai import OpenAI
 
-def clean_repeated_substrings(text):
-    """Clean repeated substrings in text"""
-    n = len(text)
-    if n<8000:
-        return text
-    for length in range(2, n // 10 + 1):
-        candidate = text[-length:] 
-        count = 0
-        i = n - length
-        
-        while i >= 0 and text[i:i + length] == candidate:
-            count += 1
-            i -= length
-
-        if count >= 10:
-            return text[:n - length * (count - 1)]  
-
-    return text
-
-model_path = "tencent/HunyuanOCR"
-llm = LLM(model=model_path, trust_remote_code=True)
-processor = AutoProcessor.from_pretrained(model_path)
-sampling_params = SamplingParams(temperature=0, max_tokens=16384)
-
-img_path = "/path/to/image.jpg"
-img = Image.open(img_path)
-messages = [
-    {"role": "system", "content": ""},
-    {"role": "user", "content": [
-        {"type": "image", "image": img_path},
-        {"type": "text", "text": "检测并识别图片中的文字，将文本坐标格式化输出。"}
-    ]}
-]
-prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-inputs = {"prompt": prompt, "multi_modal_data": {"image": [img]}}
-output = llm.generate([inputs], sampling_params)[0]
-print(clean_repeated_substrings(output.outputs[0].text))
-```
-
-### Alternatively, you can also use the provided demo script as follow:
-```shell
-cd Hunyuan-OCR-master/Hunyuan-OCR-vllm && python run_hy_ocr.py
-```
-
-
-## 🚀 Quick Start with Transformers
-
-### Installation
-```bash
-pip install git+https://github.com/huggingface/transformers@82a06db03535c49aa987719ed0746a76093b1ec4
-```
-> **Note**: Currently, Transformers has a certain performance degradation compared to the vLLM framework (we are working hard to fix it), and we will merge the fixed version into the Transformers main branch later.
-
-### Model Inference
-
-```python
-from transformers import AutoProcessor
-from transformers import HunYuanVLForConditionalGeneration
-from PIL import Image
-import torch
-
-model_name_or_path = "tencent/HunyuanOCR"
-processor = AutoProcessor.from_pretrained(model_name_or_path, use_fast=False)
-img_path = "path/to/your/image.jpg"
-image_inputs = Image.open(img_path)
-messages1 = [
-    {"role": "system", "content": ""},
-    {
+client = OpenAI(base_url="http://127.0.0.1:8001/v1", api_key="EMPTY")
+resp = client.chat.completions.create(
+    model="/path/to/HunyuanOCR/base/model",
+    messages=[{
         "role": "user",
         "content": [
-            {"type": "image", "image": img_path},
-            {"type": "text", "text": (
-                "检测并识别图片中的文字，将文本坐标格式化输出。"
-            )},
+            {"type": "image_url", "image_url": {"url": "file:///tmp/doc.png"}},
+            {"type": "text", "text": "Extract all text as markdown."},
         ],
-    }
-]
-messages = [messages1]
-texts = [
-    processor.apply_chat_template(msg, tokenize=False, add_generation_prompt=True)
-    for msg in messages
-]
-inputs = processor(
-    text=texts,
-    images=image_inputs,
-    padding=True,
-    return_tensors="pt",
+    }],
+    max_tokens=8000,
+    temperature=0.0,
 )
-model = HunYuanVLForConditionalGeneration.from_pretrained(
-    model_name_or_path,
-    attn_implementation="eager",
-    dtype=torch.bfloat16,
-    device_map="auto"
-)
-with torch.no_grad():
-    device = next(model.parameters()).device
-    inputs = inputs.to(device)
-    generated_ids = model.generate(**inputs, max_new_tokens=16384, do_sample=False)
-if "input_ids" in inputs:
-    input_ids = inputs.input_ids
-else:
-    print("inputs: # fallback", inputs)
-    input_ids = inputs.inputs
-generated_ids_trimmed = [
-    out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, generated_ids)
-]
-output_texts = processor.batch_decode(
-    generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-)
-print(output_texts)
+print(resp.choices[0].message.content)
 ```
 
-### Alternatively, you can also use the provided demo script as follow:
-```shell
-cd Hunyuan-OCR-master/Hunyuan-OCR-hf && python run_hy_ocr.py
-```
+**DFlash-specific vLLM knobs** (already set inside `serve_dflash.sh`):
 
-## 💬 Application-oriented Prompts
+| Flag | Meaning |
+|:--|:--|
+| `--speculative-config '{"method":"dflash","model":"./hyocr_dflash","num_speculative_tokens":15}'` | Enables DFlash speculative decoding with the given draft dir and K |
+| `--attention-backend flash_attn` | Required attention backend |
+| `--no-enable-prefix-caching` | Disable prefix cache (currently incompatible with DFlash) |
+| `--mm-processor-cache-gb 0` | Disable multimodal processor cache to avoid OOM |
+| `--max-num-batched-tokens 16384`, `--max-num-seqs 64` | Recommended batching profile |
 
-| Task | Prompt |
-|------|---------|
-| **Spotting** | 检测并识别图片中的文字，将文本坐标格式化输出。 |
-| **Document Parsing** | • 识别图片中的公式，用LaTeX格式表示。<br><br>• 把图中的表格解析为 HTML。<br><br>• 解析图中的图表，对于流程图使用Mermaid格式表示，其他图表使用Markdown格式表示。<br><br>• 提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。|
-| **General Parsing** | • 提取图中的文字。|
-| **Information Extraction** | • 输出Key的值。<br><br>• 提取图片中的: ['key1','key2', ...] 的字段内容，并按照JSON格式返回。<br><br>• 提取图中的字幕 |
-| **Translation** | 先提取文字，再将文字内容翻译为英文。若是文档，则其中页眉、页脚忽略。公式用latex格式表示，表格用html格式表示。 |
+Full deployment / tuning guide: [`docs/inference.md`](docs/inference.md).
 
+---
 
-## 📊 Evaluation
+## 📖 Documentation
 
-> **Note**: Evaluation metrics for competing methods are taken from official reports when available; otherwise, they are reproduced using competitor models or interfaces with the recommended standard instructions.
+- [`docs/training.md`](docs/training.md) — training modes, hyperparameters, distributed setup
+- [`docs/data_format.md`](docs/data_format.md) — raw OCR JSONL schema and packing pipeline
+- [`docs/inference.md`](docs/inference.md) — vLLM install (with DFlash patch) and deployment tuning
+- [`docs/benchmark.md`](docs/benchmark.md) — full end-to-end speed benchmark
 
-> **Note**: The HunyuanOCR evaluation metrics are derived using the TensorRT framework, which may slightly differ from the inference methods using Transformers or vLLM.
+---
 
-### Text Spotting Performance on In-house Benchmark
+## 📜 License
 
-| Model Type | Methods | Overall | Art | Doc | Game | Hand | Ads | Receipt | Screen | Scene | Video |
-|------------|---------|---------|-----|-----|------|------|-----|----------|---------|--------|--------|
-| **Traditional methods** | PaddleOCR | 53.38 | 32.83 | 70.23 | 51.59 | 56.39 | 57.38 | 50.59 | 63.38 | 44.68 | 53.35 |
-| **Traditional methods** | BaiduOCR | 61.9 | 38.5 | **78.95** | 59.24 | 59.06 | 66.7 | **63.66** | 68.18 | 55.53 | 67.38 |
-| **General VLM** | Qwen3VL-2B-Instruct | 29.68 | 29.43 | 19.37 | 20.85 | 50.57 | 35.14 | 24.42 | 12.13 | 34.90 | 40.1 |
-| **General VLM** | Qwen3VL-235B-Instruct | 53.62 | 46.15 | 43.78 | 48.00 | 68.90 | 64.01 | 47.53 | 45.91 | 54.56 | 63.79 |
-| **General VLM** | Seed-1.6-Vision | 59.23 | 45.36 | 55.04 | 59.68 | 67.46 | 65.99 | 55.68 | 59.85 | 53.66 | 70.33 |
-| **OCR-Specific VLM** | HunyuanOCR | **70.92** | **56.76** | 73.63 | **73.54** | **77.10** | **75.34** | 63.51 | **76.58** | **64.56** | **77.31** |
-
-> **Summary**: HunyuanOCR achieves the best overall performance (70.92%) across different scenarios, significantly outperforming both traditional OCR methods and general VLMs.
-
-### Document Parsing Performance on OmniDocBench and Multilingual In-house Benchmark (Edit Distance)
-
-| Model Type | Method | Size | OmniDocBench | | | | Wild-OmniDocBench | | | | DocML |
-|:-----------|:-------|:-----|:---------|:---------|:----------|:--------|:----------|:---------|:----------|:---------|:--------|
-| | | | overall | text | formula | table | overall | text | formula | table | |
-| **General VLMs** | Gemni-2.5-pro | - | 88.03 | 0.075 | 85.92 | 85.71 | 80.59 | 0.118 | 75.03 | 78.56 | 82.64 |
-| **General VLMs** | Qwen3-VL-235B | 235B | 89.15 | 0.069 | 88.14 | 86.21 | 79.69 | 0.09 | 80.67 | 68.31 | 81.40 |
-| **Specialized VLMs (Modular)** | MonkeyOCR-pro-3B | 3B | 88.85 | 0.075 | 87.5 | 86.78 | 70.00 | 0.211 | 63.27 | 67.83 | 56.50 |
-| **Specialized VLMs (Modular)** | MinerU2.5 | 1.2B | 90.67 | 0.047 | 88.46 | 88.22 | 70.91 | 0.218 | 64.37 | 70.15 | 52.05 |
-| **Specialized VLMs (Modular)** | PaddleOCR-VL | 0.9B | 92.86 | 0.035 | 91.22 | 90.89 | 72.19 | 0.232 | 65.54 | 74.24 | 57.42 |
-| **Specialized VLMs (End2End)** | Mistral-OCR | - | 78.83 | 0.164 | 82.84 | 70.03 | - | - | - | - | 64.71 |
-| **Specialized VLMs (End2End)** | Deepseek-OCR | 3B | 87.01 | 0.073 | 83.37 | 84.97 | 74.23 | 0.178 | 70.07 | 70.41 | 57.22 |
-| **Specialized VLMs (End2End)** | dots.ocr | 3B | 88.41 | 0.048 | 83.22 | 86.78 | 78.01 | 0.121 | 74.23 | 71.89 | 77.50 |
-| **Specialized VLMs (End2End)** | **HunyuanOCR** | 1B | **94.10** | 0.042 | **94.73** | **91.81** | **85.21** | **0.081** | **82.09** | **81.64** | **91.03** |
-
-
-> **Summary**: HunyuanOCR demonstrates superior performance in multilingual document parsing, achieving the lowest edit distances across most categories.
-
-### Information Extraction (in-house Benchmark) and VQA Performance (OCRBench)
-
-| Model | Cards | Receipts | Video Subtitles | OCRBench |
-|:------|:------|:---------|:----------------|:----------|
-| DeepSeek-OCR | 10.04 | 40.54 | 5.41 | 430 |
-| PP-ChatOCR | 57.02 | 50.26 | 3.1 | - |
-| Qwen3-VL-2B-Instruct | 67.62 | 64.62 | 3.75 | 858 |
-| Seed-1.6-Vision | 70.12 | 67.5 | 60.45 | 881 |
-| Qwen3-VL-235B-A22B-Instruct | 75.59 | 78.4 | 50.74 | **920** |
-| Gemini-2.5-Pro | 80.59 | 80.66 | 53.65 | 872 |
-| **HunyuanOCR** | **92.29** | **92.53** | **92.87** | 860 |
-
-
-> **Summary**: HunyuanOCR significantly outperforms larger models in cards/receipts processing and video subtitle extraction, while maintaining competitive performance on OCRBench.
-
-### Text Image Translation (in-house Benchmark) Performance
-
-| Method | Size | Other2En | Other2Zh | DoTA (en2zh) |
-|--------|------|-----------|-----------|--------------|
-| Gemini-2.5-Flash | - | 79.26 | 80.06 | 85.60 |
-| Qwen3-VL-235B-Instruct | 235B | 73.67 | 77.20 | 80.01 |
-| Qwen3-VL-8B-Instruct | 4B | 75.09 | 75.63 | 79.86 |
-| Qwen3-VL-4B-Instruct | 4B | 70.38 | 70.29 | 78.45 |
-| Qwen3-VL-2B-Instruct | 2B | 66.30 | 66.77 | 73.49 |
-| PP-DocTranslation | - | 52.63 | 52.43 | 82.09 |
-| **HunyuanOCR** | **1B** | 73.38 | 73.62 | 83.48 |
-
-> **Summary**: HunyuanOCR using only 1B of parameters, achieved comparable results to Qwen3-VL-235B in photo translation tasks.
-
-## 💡 Visualizations
-<details>
-<summary><u style="color: #2E64FE;">Click here to view detailed results.</u></summary>
-
-
-### Text Spotting
-
-Our model aims to output the text content and corresponding coordinate information of all text appearing in a text image at the line level. It performs exceptionally well in scenarios such as documents, artistic fonts, street views, handwriting, advertisements, invoices, screenshots, games, and videos.
-
-<p align="left">
- <img src="./assets/spotting1_cropped.png" width="40%"/> <br>
- <img src="./assets/vis_document_23.jpg" width="40%"/> <br>
-</p>
-
-
-### Complex Document Processing
-
-Digitizing scanned or photographed images of multilingual documents involves, specifically, organizing the text content within the images according to reading order, using LaTeX format for formulas, and expressing complex tables in HTML format.
-
-<p align="left">
- <img src="./assets/vis_parsing_fig.png" width="40%"/> <br>
-  <img src="./assets/show_res_parsing_fig.png" width="40%"/> <br>
-  <img src="./assets/vis_parsing_table.png" width="40%"/> <br>
-  <img src="./assets/vis_parsing_table_2.png" width="40%"/> <br>
-  <img src="./assets/parsing_rgsj.png" width="40%"/> <br>
-  <img src="./assets/parsing_rgsjz_2.png" width="40%"/> <br>
-  <img src="./assets/qikai1.png" width="40%"/> <br>
-  <img src="./assets/guwan1.png" width="40%"/> <br>
-  <img src="./assets/parsing_chart1.png" width="40%"/> <br>
-  <img src="./assets/vis_parsing_chart1.png" width="40%"/> <br>
-  <img src="./assets/vis_parsing_chart2.png" width="40%"/> <br>
-  <img src="./assets/vis_parsing_chart3.png" width="40%"/> <br>
-</p>
-
-
-
-### Open-field Information Extraction
-
-For common cards and tickets, fields of interest (such as name/address/company) are parsed using standard JSON format.
-
-<p align="left">
- <img src="./assets/vis_ie_1.png" width="40%"/> <br>
-</p>
-
-<p align="left">
- <img src="./assets/ie_parallel.jpg" width="25%"/> <br>
-</p>
-
-**Prompt:**
-Extract the content of the fields: ['单价', '上车时间', '发票号码', '省前缀', '总金额', '发票代码', '下车时间', '里程数'] from the image and return it in JSON format.
-
-**Response:**
-```json
-{
-    "单价": "3.00",
-    "上车时间": "09:01",
-    "发票号码": "42609332",
-    "省前缀": "陕",
-    "总金额": "￥77.10元",
-    "发票代码": "161002018100",
-    "下车时间": "09:51",
-    "里程数": "26.1km"
-}
-```
-
-### Video Subtitle Extraction
-
-Our model is capable of automatically extracting subtitles from videos, including bilingual ones.
-
-<p align="left">
- <img src="./assets/vis_subtitle1.png" width="40%"/> <br>
- <img src="./assets/vis_subtitle2.png" width="40%"/> <br>
- <img src="./assets/vis_subtitle3.png" width="37.5%"/> <br>
-</p>
-
-
-
-### Image Text Translation
-
-Our model is able to translate images of minor languages ​​taken into Chinese or English text format end-to-end. Currently, it mainly supports 14 frequently used minor languages ​​(specifically including: German, Spanish, Turkish, Italian, Russian, French, Portuguese, Arabic, Thai, Vietnamese, Indonesian, Malay, Japanese, and Korean) into Chinese/English, as well as Chinese-English translation function (it won the small model track championship in the ICDAR2025 document end-to-end translation competition).
-
-<p align="left">
- <img src="./assets/translation2.png" width="40%"/> <br>
-</p>
-
-</details>
-
-
-## 📚 Citation
-```
-@misc{hunyuanvisionteam2025hunyuanocrtechnicalreport,
-      title={HunyuanOCR Technical Report}, 
-      author={Hunyuan Vision Team and Pengyuan Lyu and Xingyu Wan and Gengluo Li and Shangpin Peng and Weinong Wang and Liang Wu and Huawen Shen and Yu Zhou and Canhui Tang and Qi Yang and Qiming Peng and Bin Luo and Hower Yang and Xinsong Zhang and Jinnian Zhang and Houwen Peng and Hongming Yang and Senhao Xie and Longsha Zhou and Ge Pei and Binghong Wu and Kan Wu and Jieneng Yang and Bochao Wang and Kai Liu and Jianchen Zhu and Jie Jiang and Linus and Han Hu and Chengquan Zhang},
-      year={2025},
-      journal={arXiv preprint arXiv:2511.19575},
-      url={https://arxiv.org/abs/2511.19575}, 
-}
-
-@misc{li2026mmtitbench,
-      title={MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation},
-      author={Gengluo Li and Chengquan Zhang and Yupu Liang and Huawen Shen and Yaping Zhang and Pengyuan Lyu and Weinong Wang and Xingyu Wan and Gangyan Zeng and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2603.23896},
-      url={https://arxiv.org/abs/2603.23896},
-}
-
-@misc{li2026towardsrealworlddocument,
-      title={Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training},
-      author={Gengluo Li and Pengyuan Lyu and Chengquan Zhang and Huawen Shen and Liang Wu and Xingyu Wan and Gangyan Zeng and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2603.23885},
-      url={https://arxiv.org/abs/2603.23885},
-}
-
-@misc{li2026chronicles,
-      title={Chronicles-OCR: A Cross-Temporal Perception Benchmark for the Evolutionary Trajectory of Chinese Characters},
-      author={Gengluo Li and Shangping Peng and Xingyu Wan and Chengquan Zhang and Hao Feng and Xin Xu and Pian Wu and Bang Li and Zengmao Ding and Yongge Liu and Yipei Ye and Yang Yang and Zhan Shu and Guojun Yan and Zhe Li and Can Ma and Weiping Wang and Yu Zhou and Han Hu},
-      year={2026},
-      journal={arXiv preprint arXiv:2605.11960},
-      url={https://arxiv.org/abs/2605.11960},
-}
-
-@misc{peng2026chartarena,
-      title={ChartArena: Benchmarking Chart Parsing across Languages, Scenarios, and Formats},
-      author={Shangpin Peng and Gengluo Li and Xingyu Wan and Chengquan Zhang and Hao Feng and Binghong Wu and Huawen Shen and Weinong Wang and Ziyi Cai and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2606.01348},
-      url={https://arxiv.org/abs/2606.01348},
-}
-```
-
-## 🙏 Acknowledgements
-We would like to thank [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR), [MinerU](https://github.com/opendatalab/MinerU), [MonkeyOCR](https://github.com/Yuliang-Liu/MonkeyOCR), [DeepSeek-OCR](https://github.com/deepseek-ai/DeepSeek-OCR), [dots.ocr](https://github.com/rednote-hilab/dots.ocr) for their valuable models and ideas.
-We also appreciate the benchmarks: [OminiDocBench](https://github.com/opendatalab/OmniDocBench), [OCRBench](https://github.com/Yuliang-Liu/MultimodalOCR/tree/main/OCRBench), [DoTA](https://github.com/liangyupu/DIMTDA).
-
-Special thanks to vLLM and Hugging Face Communities for their Day-0 inference supports.
+HunyuanOCR-1.5 is released under the same license as HunyuanOCR 1.0 —
+the **Tencent Hunyuan Community License Agreement**. See [`LICENSE`](LICENSE) for the full terms.
