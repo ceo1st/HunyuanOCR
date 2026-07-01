@@ -1,39 +1,48 @@
 #!/bin/bash
 # ============================================================================
-# Deploy HunyuanOCR base model with vLLM (autoregressive baseline).
-# OpenAI-compatible /v1/chat/completions endpoint.
+# Deploy HunyuanOCR-1.5 (base, autoregressive) with vLLM.
+# OpenAI-compatible /v1/chat/completions endpoint on a single GPU.
+#
+# For the multi-GPU / multi-instance production layout (8 replicas on
+# ports 8000~8007), see the reference script at:
+#   https://github.com/Tencent-Hunyuan/HunyuanOCR (branch: develop)
+#   docs/inference.md → "Multi-GPU deployment"
 # ============================================================================
 
 set -e
 
 MODEL_PATH=${MODEL_PATH:-/path/to/HunyuanOCR/base/model}
+SERVED_NAME=${SERVED_NAME:-tencent/HunyuanOCR-v2}
 PORT=${PORT:-8000}
 GPU=${GPU:-0}
-GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.85}
-MEDIA_PATH=${MEDIA_PATH:-/tmp}     # allowed local media path for images
+GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.9}
+MAX_MODEL_LEN=${MAX_MODEL_LEN:-131072}
+MAX_NUM_BATCHED_TOKENS=${MAX_NUM_BATCHED_TOKENS:-131072}
 
-LOG=${LOG:-ar_server_${PORT}.log}
+LOG=${LOG:-vllm_ar_${PORT}.log}
 
 echo "========================================"
-echo "  HunyuanOCR AR baseline"
-echo "  model     : ${MODEL_PATH}"
-echo "  gpu       : ${GPU}"
-echo "  port      : ${PORT}"
-echo "  media     : ${MEDIA_PATH}"
-echo "  log       : ${LOG}"
+echo "  HunyuanOCR-1.5 vLLM (AR baseline)"
+echo "  model         : ${MODEL_PATH}"
+echo "  served-as     : ${SERVED_NAME}"
+echo "  gpu           : ${GPU}"
+echo "  port          : ${PORT}"
+echo "  gpu_mem_util  : ${GPU_MEM_UTIL}"
+echo "  max_model_len : ${MAX_MODEL_LEN}"
+echo "  log           : ${LOG}"
 echo "========================================"
 
 CUDA_VISIBLE_DEVICES=${GPU} nohup vllm serve "${MODEL_PATH}" \
-    --served-model-name "${MODEL_PATH}" \
+    --served-model-name "${SERVED_NAME}" \
+    -tp 1 \
+    --limit-mm-per-prompt '{"image":4, "video":0}' \
+    --trust_remote_code \
     --port ${PORT} \
-    --allowed-local-media-path "${MEDIA_PATH}" \
-    --attention-backend flash_attn \
-    --no-enable-prefix-caching \
-    --mm-processor-cache-gb 0 \
-    --max-num-batched-tokens 16384 \
-    --max-num-seqs 64 \
     --gpu-memory-utilization ${GPU_MEM_UTIL} \
+    --max-model-len ${MAX_MODEL_LEN} \
+    --max-num-batched-tokens ${MAX_NUM_BATCHED_TOKENS} \
     > "${LOG}" 2>&1 &
 
 echo "[started] pid=$!  log=${LOG}"
-echo "Wait for 'Application startup complete' with:  tail -f ${LOG}"
+echo "Wait for readiness with:"
+echo "  curl -sf http://127.0.0.1:${PORT}/v1/models  ||  tail -f ${LOG}"

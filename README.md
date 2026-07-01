@@ -153,12 +153,18 @@ Entry: [`train/train_draft_from_dflash.py`](train/train_draft_from_dflash.py).
 
 ## 🧪 Inference
 
-Two paths are provided: **HuggingFace transformers** (single-image, easy to hack, recommended for
-debugging) and **vLLM** (production serving, OpenAI-compatible, required for real DFlash speedup).
+Three paths are provided, all runnable on a **single image** for smoke-testing:
+
+- **A. HuggingFace transformers** — single-image, easy to hack, recommended for correctness debugging.
+- **B. vLLM (OpenAI-compatible)** — production serving; required for real DFlash speedup.
+- **C. llama.cpp** — CPU / consumer-GPU / laptop deployment (see below).
 
 ### A. HuggingFace transformers (single-image debug)
 
-**Base model:**
+The scripts use the official `HunYuanVLForConditionalGeneration` + `AutoProcessor`
+integration shipped in transformers ≥ 4.57 (HunyuanOCR-1.5 series).
+
+**Base model — one image:**
 
 ```bash
 python inference/infer_base.py \
@@ -167,7 +173,7 @@ python inference/infer_base.py \
     --max-new-tokens 8000
 ```
 
-**Base model + DFlash draft (correctness check):**
+**Base model + DFlash draft — correctness / draft-load check on one image:**
 
 ```bash
 python inference/infer_dflash.py \
@@ -184,74 +190,86 @@ The default OCR prompt is:
 表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
 ```
 
-Override with `--prompt "..."`. Both scripts print latency, completion tokens and tok/s.
+Override with `--prompt "..."`. Both scripts print load time, generation latency
+and the decoded text.
 
-> ℹ️ `infer_dflash.py` is designed for correctness verification of a DFlash checkpoint on a
-> single image. Real end-to-end speedup is only realized under vLLM (see below), because
-> transformers has no CUDA-graph / batched speculative-decoding kernel.
+> ℹ️ `infer_dflash.py` only verifies that the DFlash draft checkpoint loads and
+> produces a matching AR reference on the single image. Real speculative-decoding
+> acceleration is only realized under vLLM (see below).
 
 ### B. vLLM production serving (OpenAI-compatible)
 
-**Autoregressive baseline** (HunyuanOCR without DFlash):
+The launch scripts mirror the internal deployment: served alias
+`tencent/HunyuanOCR-v2`, `-tp 1`, `--limit-mm-per-prompt '{"image":4,"video":0}'`,
+`--trust_remote_code`, `--max-model-len 131072`.
+
+**Autoregressive baseline** (HunyuanOCR without DFlash), single GPU:
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
-PORT=8000 GPU=0 GPU_MEM_UTIL=0.85 \
-MEDIA_PATH=/tmp \
+GPU=0 PORT=8000 GPU_MEM_UTIL=0.9 \
 bash inference/serve_ar.sh
 ```
 
-**DFlash speculative decoding** (recommended):
+**DFlash speculative decoding** (recommended when a DFlash draft is available):
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
 DFLASH_PATH=./hyocr_dflash \
-PORT=8001 GPU=1 GPU_MEM_UTIL=0.85 \
+GPU=0 PORT=8001 GPU_MEM_UTIL=0.9 \
 NUM_SPEC_TOKENS=15 \
-MEDIA_PATH=/tmp \
 bash inference/serve_dflash.sh
 ```
 
 Both endpoints expose the standard vLLM OpenAI-compatible routes at
-`http://<host>:<port>/v1/chat/completions`. Wait for `Application startup complete` in the log
-before sending requests:
+`http://<host>:<port>/v1/chat/completions`. Wait for readiness with:
 
 ```bash
-tail -f dflash_server_8001.log
+curl -sf http://127.0.0.1:8000/v1/models
+# or
+tail -f vllm_ar_8000.log
 ```
 
-Minimal client example (Python):
+**Minimal single-image client** — send one image via the shipped script:
+
+```bash
+python inference/infer_vllm_client.py \
+    --host 127.0.0.1 --port 8000 \
+    --model tencent/HunyuanOCR-v2 \
+    --image /path/to/document.png
+```
+
+Or hand-written with the OpenAI SDK (mirrors what `infer_vllm_client.py` does):
 
 ```python
+import base64, mimetypes
 from openai import OpenAI
 
-client = OpenAI(base_url="http://127.0.0.1:8001/v1", api_key="EMPTY")
+def data_url(p):
+    mime = mimetypes.guess_type(p)[0] or "image/jpeg"
+    return f"data:{mime};base64,{base64.b64encode(open(p,'rb').read()).decode()}"
+
+client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:8000/v1")
 resp = client.chat.completions.create(
-    model="/path/to/HunyuanOCR/base/model",
-    messages=[{
-        "role": "user",
-        "content": [
-            {"type": "image_url", "image_url": {"url": "file:///tmp/doc.png"}},
-            {"type": "text", "text": "Extract all text as markdown."},
-        ],
-    }],
-    max_tokens=8000,
+    model="tencent/HunyuanOCR-v2",
+    messages=[
+        {"role": "system", "content": ""},
+        {"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": data_url("/path/to/document.png")}},
+            {"type": "text", "text": "请提取图片中的文字内容。"},
+        ]},
+    ],
+    max_tokens=4096,
     temperature=0.0,
+    top_p=1.0,
+    extra_body={"top_k": -1, "repetition_penalty": 1.08, "skip_special_tokens": True},
 )
 print(resp.choices[0].message.content)
 ```
 
-**DFlash-specific vLLM knobs** (already set inside `serve_dflash.sh`):
-
-| Flag | Meaning |
-|:--|:--|
-| `--speculative-config '{"method":"dflash","model":"./hyocr_dflash","num_speculative_tokens":15}'` | Enables DFlash speculative decoding with the given draft dir and K |
-| `--attention-backend flash_attn` | Required attention backend |
-| `--no-enable-prefix-caching` | Disable prefix cache (currently incompatible with DFlash) |
-| `--mm-processor-cache-gb 0` | Disable multimodal processor cache to avoid OOM |
-| `--max-num-batched-tokens 16384`, `--max-num-seqs 64` | Recommended batching profile |
-
-Full deployment / tuning guide: [`docs/inference.md`](docs/inference.md).
+> ⚠️ For **multi-image** requests (>1 image per prompt), an extra vLLM shape-fix
+> patch is required — this is unrelated to single-image OCR. See
+> [`docs/inference.md`](docs/inference.md) if you plan to run multi-image benches.
 
 ### C. PC-side deployment via llama.cpp
 

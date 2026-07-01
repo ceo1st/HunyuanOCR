@@ -1,17 +1,18 @@
 """
-HunyuanOCR + DFlash speculative decoding inference (single image) via
+HunyuanOCR-1.5 + DFlash draft correctness check on a **single image** via
 HuggingFace transformers.
 
-For production serving, use vLLM instead (see inference/serve_dflash.sh) which
-provides ~2.1× end-to-end speedup with tuned CUDA graphs and batching.
-This script is intended for quick debugging / correctness verification of a
-DFlash checkpoint before deploying to vLLM.
+For real end-to-end acceleration, deploy via vLLM (see `inference/serve_dflash.sh`).
+This transformers path is only a correctness / sanity check for a DFlash draft
+checkpoint before deploying to vLLM — it does **not** run the speculative
+decoding loop; it merely loads the base model + DFlash draft, prints the draft
+parameter count, and produces the AR reference output for comparison.
 
 Usage:
     python inference/infer_dflash.py \
-        --image /path/to/document.png \
         --model /path/to/HunyuanOCR/base \
-        --dflash-model ./hyocr_dflash/
+        --dflash-model ./hyocr_dflash/ \
+        --image /path/to/document.png
 """
 import argparse
 import importlib.util
@@ -19,20 +20,17 @@ import sys
 import time
 from pathlib import Path
 
-import torch
-from PIL import Image
-from transformers import AutoModelForCausalLM, AutoProcessor
-
-
-DEFAULT_PROMPT = (
-    "提取文档图片中正文的所有信息用markdown格式表示，"
-    "其中页眉、页脚部分忽略，表格用html格式表达，"
-    "文档中公式用latex格式表示，按照阅读顺序组织进行解析。"
+# Reuse the exact loading / prompting logic used by infer_base.py so the AR
+# reference output matches the vLLM baseline byte-for-byte.
+from infer_base import (  # noqa: E402
+    DEFAULT_PROMPT,
+    infer_one,
+    load_model_and_processor,
 )
 
 
-def load_dflash_draft(dflash_dir: str, dtype: torch.dtype, device: str):
-    """Load DFlash draft model from a directory with dflash.py + config.json + model.safetensors."""
+def load_dflash_draft(dflash_dir: str, dtype, device: str):
+    """Load DFlash draft model from a dir with `dflash.py` + `config.json` + weights."""
     dflash_dir = Path(dflash_dir)
     dflash_py = dflash_dir / "dflash.py"
     if not dflash_py.is_file():
@@ -52,88 +50,56 @@ def load_dflash_draft(dflash_dir: str, dtype: torch.dtype, device: str):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--image", required=True)
     ap.add_argument("--model", required=True, help="HunyuanOCR base model dir")
     ap.add_argument("--dflash-model", required=True,
-                    help="DFlash draft dir (contains dflash.py + config.json + model.safetensors)")
+                    help="DFlash draft dir (contains dflash.py + config.json + weights)")
+    ap.add_argument("--image", required=True, help="Path to input image")
     ap.add_argument("--prompt", default=DEFAULT_PROMPT)
     ap.add_argument("--max-new-tokens", type=int, default=8000)
     ap.add_argument("--num-spec-tokens", type=int, default=15,
-                    help="Number of draft tokens per speculative step")
+                    help="Number of draft tokens per speculative step (used only under vLLM)")
     ap.add_argument("--dtype", default="bfloat16",
                     choices=["float16", "bfloat16", "float32"])
-    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--attn-implementation", default="eager",
+                    choices=["eager", "sdpa", "flash_attention_2"])
     args = ap.parse_args()
 
     if not Path(args.image).is_file():
         print(f"[ERROR] image not found: {args.image}", file=sys.stderr)
         sys.exit(1)
 
-    dtype = getattr(torch, args.dtype)
-
     print(f"[info] loading base model from {args.model} ...")
     t0 = time.time()
-    processor = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model, trust_remote_code=True, torch_dtype=dtype,
-    ).to(args.device).eval()
-    print(f"[info] base model loaded in {time.time()-t0:.1f}s")
+    model, processor, torch_mod = load_model_and_processor(
+        args.model, args.dtype, args.attn_implementation,
+    )
+    print(f"[info] base model loaded in {time.time() - t0:.1f}s")
 
+    device = str(next(model.parameters()).device)
     print(f"[info] loading DFlash draft from {args.dflash_model} ...")
     t0 = time.time()
-    draft = load_dflash_draft(args.dflash_model, dtype, args.device)
-    print(f"[info] draft loaded in {time.time()-t0:.1f}s "
-          f"({sum(p.numel() for p in draft.parameters())/1e6:.1f} M params)")
+    dtype = getattr(torch_mod, args.dtype)
+    draft = load_dflash_draft(args.dflash_model, dtype, device)
+    n_params = sum(p.numel() for p in draft.parameters()) / 1e6
+    print(f"[info] draft loaded in {time.time() - t0:.1f}s ({n_params:.1f} M params)")
 
-    image = Image.open(args.image).convert("RGB")
-    messages = [{
-        "role": "user",
-        "content": [
-            {"type": "image", "image": image},
-            {"type": "text",  "text": args.prompt},
-        ],
-    }]
-
-    inputs = processor.apply_chat_template(
-        messages,
-        add_generation_prompt=True,
-        tokenize=True,
-        return_dict=True,
-        return_tensors="pt",
-    ).to(args.device)
-
-    # NOTE: A minimal speculative decoding loop is model-specific and lives inside
-    # dflash.py (draft.speculative_generate). If your dflash.py exposes such a
-    # helper, uncomment the block below. Otherwise, prefer vLLM for real inference.
-    print("[info] generating (speculative decoding requires vLLM for production; "
-          "this transformers path only verifies draft correctness) ...")
-
+    print("[info] generating AR reference (correctness path; "
+          "real speculative decoding requires vLLM) ...")
     t = time.time()
-    with torch.no_grad():
-        # Fallback to autoregressive generation via the base model,
-        # printing draft stats along the way if the draft exposes them.
-        output_ids = model.generate(
-            **inputs,
-            max_new_tokens=args.max_new_tokens,
-            do_sample=False,
-        )
+    text = infer_one(model, processor, torch_mod,
+                     args.image, args.prompt, args.max_new_tokens)
     dt = time.time() - t
 
-    prompt_len = inputs["input_ids"].shape[1]
-    completion_ids = output_ids[0, prompt_len:]
-    text = processor.tokenizer.decode(completion_ids, skip_special_tokens=True)
-
     print("=" * 60)
-    print(f"Latency         : {dt:.2f}s  (transformers AR fallback; not spec decoding)")
-    print(f"Completion tokens: {len(completion_ids)}")
-    print(f"tok/s           : {len(completion_ids)/dt:.1f}")
+    print(f"Latency         : {dt:.2f}s  (transformers AR reference, not spec decoding)")
+    print(f"Completion chars: {len(text)}")
     print("=" * 60)
     print(text[:2000])
     if len(text) > 2000:
         print(f"\n... ({len(text)} chars total, truncated)")
 
     print(
-        "\n[hint] For real DFlash speedup (~2.1×), deploy via vLLM:\n"
+        "\n[hint] For real DFlash acceleration, deploy via vLLM:\n"
         "       bash inference/serve_dflash.sh"
     )
 
