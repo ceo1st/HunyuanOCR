@@ -4,18 +4,8 @@
 
 </div>
 
-<p align="center">
- <img src="./assets/hyocr-head-img.png" width="80%"/> <br>
-</p>
-
-<p align="center">
-<a href="https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh"><b>🎯 Online Demo</b></a> |
-<a href="https://huggingface.co/tencent/HunyuanOCR"><b>📥 Model Download</b></a>
-</p>
-
----
-
-> ℹ️ This branch (`develop`) hosts the **HunyuanOCR-1.5** open-source training & inference toolkit.
+> 📝 **Note:** The technical report and model weights of HunyuanOCR-1.5 are **coming very soon**.
+> This branch (`develop`) hosts the open-source **training and inference toolkit** for HunyuanOCR-1.5.
 > For the original HunyuanOCR 1.0 release, please switch to the `main` branch or refer to
 > [`README_v1.0.md`](./README_v1.0.md) / [`README_zh_v1.0.md`](./README_zh_v1.0.md).
 
@@ -23,33 +13,40 @@
 
 ## 📖 Introduction
 
-**HunyuanOCR-1.5** is the next iteration of Tencent's end-to-end OCR expert VLM, aiming at
-**simultaneously higher accuracy and higher inference efficiency** than 1.0. Key upgrades include:
+**HunyuanOCR-1.5** is a lightweight, end-to-end OCR-specialized vision-language model. It targets a
+broad range of text-centric visual tasks and unifies **document parsing, text spotting, information
+extraction, text-image translation, and multi-image document understanding** within a single
+end-to-end VLM.
 
-- 🧠 **Stronger E2E OCR quality** — improved document parsing, text spotting, information extraction,
-  photo translation and video subtitle extraction, with a single-instruction / single-inference
-  interface consistent with 1.0.
-- ⚡ **DFlash speculative decoding** — an MTP-style draft head trained jointly / from-scratch on
-  packed OCR sequences, delivering up to **2.1× end-to-end speedup** on real-world documents with
-  no measurable output-quality loss (< 0.15% token diff vs AR).
-- 📚 **Full open-source training pipeline** — SFT of the HunyuanOCR base model, DFlash draft
-  training (from-scratch and continue-finetune), and an efficient token-count-then-pack data
-  pipeline for large-scale packed sequence training.
-- 🚀 **vLLM production deployment** — a single command deploys HunyuanOCR-1.5 (± DFlash) as an
-  OpenAI-compatible chat/completions endpoint.
+Building upon the validated lightweight architecture of HunyuanOCR-1.0, HunyuanOCR-1.5 does **not**
+redesign the model backbone. Instead, it performs a systematic upgrade around two goals — **making
+the model faster and better**:
 
-### 🔥 DFlash speedup at a glance
+- ⚡ **Faster — DFlash inference acceleration.**
+ End-to-end OCR is often accompanied by long autoregressive decoding, which becomes the major
+ bottleneck for dense documents, tables, formulas, and other long structured outputs.
+ HunyuanOCR-1.5 adapts a speculative-decoding framework based on **DFlash**: a lightweight
+ block-diffusion draft model drafts multiple candidate tokens in parallel, which are then verified
+ by the target model in a single pass. This significantly reduces the decoding latency of long
+ structured outputs while **preserving the output distribution** of the target model.
 
-| Metric | HunyuanOCR base (AR) | HunyuanOCR + DFlash | Speedup |
-|:--|--:|--:|--:|
-| Avg latency / image | 3.03 s | **1.41 s** | **2.14×** |
-| Token/s (end-to-end) | 466 | **1002** | 2.15× |
-| Page/s | 0.33 | **0.71** | 2.14× |
-| Output token diff vs AR | — | < 0.15% | ~lossless |
+- 🧠 **Better — Agentic Data Flow + upgraded training recipe.**
+ On the data side, we propose **Agentic Data Flow**, an agent-driven data-construction system that
+ translates model weaknesses into executable data requirements. Agents deeply participate in
+ material search, tool-based verification, sample cleaning, and data-pipeline development, and
+ iterate in a closed loop with algorithm engineers. In HunyuanOCR-1.5, this system is used for
+ targeted long-tail capabilities such as **low-resource OCR, ancient-script OCR, and multi-image
+ text-centric QA**.
+ On the training side, we systematically upgrade the recipe: pretraining Stage-3 is re-planned to
+ incorporate the newly produced capability data, multi-image data, and historical OCR data, with
+ maximum image resolution extended to **4K** and context window extended to **128K**; post-training
+ refines the SFT data and further explores RL across different OCR tasks to amplify the gains from
+ reinforcement learning.
 
-*Evaluated on 930 real-world document / PPT / book / textbook images at concurrency=1,
-max_tokens=8000, on a single NVIDIA H20 (80GB). See [`docs/benchmark.md`](docs/benchmark.md)
-for the full 8-way OCR comparison.*
+Together, HunyuanOCR-1.5 achieves **both faster inference and broader OCR capability coverage**
+while retaining the deployment advantages of a lightweight end-to-end model. This repository
+open-sources the SFT / DFlash training pipeline and the transformers / vLLM inference stack, so
+that the community can reproduce, fine-tune, and extend OCR-specialized VLMs.
 
 ---
 
@@ -118,7 +115,7 @@ Full argument list: see [`docs/training.md`](docs/training.md).
 
 ### 3. Train the DFlash draft model — from scratch
 
-Trains a small MTP-style draft that predicts K speculative tokens for HunyuanOCR.
+Trains a small block-diffusion draft that predicts K speculative tokens for HunyuanOCR.
 Default profile: `lr=1e-4`, `epochs=2`, `num_mask_tokens=16`, `sample_block_num=8`.
 
 ```bash
@@ -133,10 +130,7 @@ Entry: [`train/train_draft.py`](train/train_draft.py).
 ### 4. Continue-finetune from an existing DFlash checkpoint
 
 Use this when adapting a released DFlash draft to a smaller / domain-specific dataset.
-Recommended profile (v3): `lr=2e-5`, `epochs=10`, `warmup_ratio=0.05`, `save_steps=500`.
-
-> Empirical result on 14.7k packs: v3 continue-finetune beats v1 (1M packs from-scratch) on
-> both acceptance rate (**42% vs 33%**) and end-to-end speedup (**2.14× vs 1.92×**).
+Recommended profile: `lr=2e-5`, `epochs=10`, `warmup_ratio=0.05`, `save_steps=500`.
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
@@ -186,8 +180,8 @@ The default OCR prompt is:
 Override with `--prompt "..."`. Both scripts print latency, completion tokens and tok/s.
 
 > ℹ️ `infer_dflash.py` is designed for correctness verification of a DFlash checkpoint on a
-> single image. **The real ~2.1× speedup is only realized under vLLM** (see below), because
-> transformers has no CUDA-graph / batched speculative decoding kernel.
+> single image. Real end-to-end speedup is only realized under vLLM (see below), because
+> transformers has no CUDA-graph / batched speculative-decoding kernel.
 
 ### B. vLLM production serving (OpenAI-compatible)
 
@@ -200,7 +194,7 @@ MEDIA_PATH=/tmp \
 bash inference/serve_ar.sh
 ```
 
-**DFlash speculative decoding** (recommended, ~2.1× end-to-end speedup):
+**DFlash speculative decoding** (recommended):
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
@@ -259,7 +253,7 @@ Full deployment / tuning guide: [`docs/inference.md`](docs/inference.md).
 - [`docs/training.md`](docs/training.md) — training modes, hyperparameters, distributed setup
 - [`docs/data_format.md`](docs/data_format.md) — raw OCR JSONL schema and packing pipeline
 - [`docs/inference.md`](docs/inference.md) — vLLM install (with DFlash patch) and deployment tuning
-- [`docs/benchmark.md`](docs/benchmark.md) — full end-to-end speed benchmark
+- [`docs/benchmark.md`](docs/benchmark.md) — end-to-end speed benchmark
 
 ---
 

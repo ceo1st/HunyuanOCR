@@ -3,51 +3,36 @@
 ## Setup
 
 - **Hardware**: single NVIDIA H20 (80 GB) per server
-- **Dataset**: 930 real-world document / PPT / book / textbook images
+- **Dataset**: OmnidocBench, document / PPT / book / textbook images
 - **Config**: concurrency=1 (single-request latency), `max_tokens=8000`, `temperature=0.0`
 - **Metric**: end-to-end latency from HTTP request to complete response
 
-## HunyuanOCR AR vs DFlash v1 vs DFlash v3
+## HunyuanOCR AR vs DFlash
 
 The core comparison — same base model, different inference paths:
 
 | Config | wall time | avg latency | page/s | speedup |
 |---|---:|---:|---:|---:|
 | **HunyuanOCR base (AR)** | 2821.9 s | 3.032 s | 0.330 | 1.00× |
-| HunyuanOCR + DFlash v1 (1M packs, from-scratch) | 1469.4 s | 1.565 s | 0.633 | 1.92× |
-| **HunyuanOCR + DFlash v3 (14.7k packs, finetune)** | **1316.5 s** | **1.408 s** | **0.706** | **2.14×** |
+| **HunyuanOCR + DFlash (14.7k packs, finetune)** | **1316.5 s** | **1.408 s** | **0.706** | **2.14×** |
 
 **Key results:**
-- v3 achieves **2.14× end-to-end speedup** vs AR baseline
-- v3 is **11.6% faster** than v1 despite using **70× less** training data
+- DFlash achieves **2.14× end-to-end speedup** vs AR baseline
 - Speculative decoding is essentially lossless: total-tokens difference < 0.15% vs AR
-
-## Speculative Decoding Metrics (v1 vs v3)
-
-Sampled from 50 windows during 930-image inference:
-
-| Metric | v1 | v3 | v3 vs v1 |
-|---|---:|---:|---:|
-| Mean acceptance length (/15) | 6.06 | **7.36** | **+21.4%** |
-| Avg draft accept rate | 33.8% | **42.4%** | **+8.7 pp** |
-| Median accept rate | 35.4% | 45.3% | — |
-
-Both `speedup ratio` and `acceptance rate` independently confirm v3 > v1.
 
 ## Cross-Model Comparison (8-way)
 
-Comparison with other open-source OCR VLMs, all under identical eval conditions (930 images, c=1, `max_tokens=8000`):
+Comparison with other open-source OCR VLMs, all under identical eval conditions (c=1, `max_tokens=8000`):
 
 | Rank | Model | Latency (s/img) | Page/s | vs HunyuanOCR AR | Notes |
 |:---:|---|---:|---:|---:|---|
-| 🥇 | **HunyuanOCR + DFlash v3** | **1.41** | **0.706** | **2.14×** | Speculative decoding |
-| 🥈 | HunyuanOCR + DFlash v1 | 1.57 | 0.633 | 1.92× | Original DFlash draft |
-| 🥉 | GLM-OCR (SDK page pipeline) | 1.65 | 0.604 | 1.83× | Layout + region OCR concurrent |
-| 4 | PaddleOCR-VL 1.6 (0.9B) | 1.74 | 0.562 | 1.71× | 0.9B small model + two-stage |
-| 5 | HunyuanOCR base (AR) | 3.03 | 0.330 | 1.00× | Baseline |
-| 6 | Unlimited-OCR (SGLang) | 3.66 | 0.255 | 0.77× | image tiling (gundam mode) |
-| 7 | DeepSeek-OCR-2 | 5.46 | 0.179 | 0.54× | Large model + grounding |
-| 8 | dots.ocr | 7.15 | 0.136 | 0.41× | Slow but structured |
+| 🥇 | **HunyuanOCR + DFlash** | **1.41** | **0.706** | **2.14×** | Speculative decoding |
+| 🥈 | GLM-OCR (SDK page pipeline) | 1.65 | 0.604 | 1.83× | Layout + region OCR concurrent |
+| 🥉 | PaddleOCR-VL 1.6 (0.9B) | 1.74 | 0.562 | 1.71× | 0.9B small model + two-stage |
+| 4 |  HunyuanOCR base (AR) | 3.03 | 0.330 | 1.00× | Baseline |
+| 5 | Unlimited-OCR (SGLang) | 3.66 | 0.255 | 0.77× | image tiling (gundam mode) |
+| 6 | DeepSeek-OCR-2 | 5.46 | 0.179 | 0.54× | Large model + grounding |
+| 7 | dots.ocr | 7.15 | 0.136 | 0.41× | Slow but structured |
 
 ## Reproducing These Numbers
 
