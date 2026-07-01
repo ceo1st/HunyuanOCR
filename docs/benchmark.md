@@ -20,7 +20,7 @@ The core comparison — same base model, different inference paths:
 - DFlash achieves **2.14× end-to-end speedup** vs AR baseline
 - Speculative decoding is essentially lossless: total-tokens difference < 0.15% vs AR
 
-## Cross-Model Comparison (8-way)
+## Cross-Model Comparison
 
 Comparison with other open-source OCR VLMs, all under identical eval conditions (c=1, `max_tokens=8000`):
 
