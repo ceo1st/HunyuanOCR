@@ -75,19 +75,12 @@ pip install -r requirements.txt
 pip install flash-attn --no-build-isolation
 ```
 
-### Inference dependencies (vLLM, tested recipe)
+### Inference dependencies (vLLM)
 
 We use a **dedicated venv** for inference to keep vLLM nightly isolated from the
 training environment. The exact recipe validated for HunyuanOCR-1.5 + DFlash is:
 
 ```bash
-# (optional) proxy — replace with yours if needed
-# export http_proxy=http://your.proxy:3128
-# export https_proxy=http://your.proxy:3128
-
-uv venv /dockerdata/venv-vllm --python 3.12
-source /dockerdata/venv-vllm/bin/activate
-
 # vLLM nightly (cu130); ships DFlash speculative-decoding support
 uv pip install -U vllm \
     --torch-backend=cu130 \
@@ -99,10 +92,6 @@ uv pip install runai-model-streamer
 
 > 💡 If you are on CUDA 12.x, replace `--torch-backend=cu130` with the matching
 > tag (e.g. `cu121`, `cu124`). Everything else stays the same.
-
-Then always launch `inference/serve_ar.sh` / `inference/serve_dflash.sh` with
-this venv activated (`source /dockerdata/venv-vllm/bin/activate`).
-
 ---
 
 ## 🚀 Training
