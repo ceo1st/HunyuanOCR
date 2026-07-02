@@ -24,5 +24,6 @@ tensorboard>=2.15.0
 tqdm>=4.66.0
 
 # Inference (optional, only needed for inference/*.py)
-# vllm==0.23.1rc1  # with dflash patch, see docs/inference.md
+# vLLM is installed in a separate venv via `uv pip install -U vllm --torch-backend=cu130
+#   --extra-index-url https://wheels.vllm.ai/nightly` — see docs/inference.md
 openai>=1.30.0  # OpenAI-compatible client for benchmarking

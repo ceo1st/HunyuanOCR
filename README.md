@@ -59,19 +59,49 @@ that the community can reproduce, fine-tune, and extend OCR-specialized VLMs.
 
 ## ⚙️ Environment
 
-- Python 3.10+
-- PyTorch 2.1+ (CUDA 12.1 recommended)
+- Python 3.10+ (3.12 tested)
+- PyTorch 2.1+ (CUDA 12.1+; a cu130 build has been tested end-to-end)
 - transformers 4.57+
 - DeepSpeed 0.14+
-- vLLM 0.23.1rc1 + DFlash patch (only required for DFlash inference — see [`docs/inference.md`](docs/inference.md))
+- vLLM nightly (0.23.x, cu130 build tested) — required for AR / DFlash serving.
+  DFlash speculative decoding is included; no extra patch on top of nightly is
+  needed. See [`docs/inference.md`](docs/inference.md) for tuning.
 
-Install common training / inference dependencies:
+### Training dependencies
 
 ```bash
 pip install -r requirements.txt
 # flash-attn requires manual build:
 pip install flash-attn --no-build-isolation
 ```
+
+### Inference dependencies (vLLM, tested recipe)
+
+We use a **dedicated venv** for inference to keep vLLM nightly isolated from the
+training environment. The exact recipe validated for HunyuanOCR-1.5 + DFlash is:
+
+```bash
+# (optional) proxy — replace with yours if needed
+# export http_proxy=http://your.proxy:3128
+# export https_proxy=http://your.proxy:3128
+
+uv venv /dockerdata/venv-vllm --python 3.12
+source /dockerdata/venv-vllm/bin/activate
+
+# vLLM nightly (cu130); ships DFlash speculative-decoding support
+uv pip install -U vllm \
+    --torch-backend=cu130 \
+    --extra-index-url https://wheels.vllm.ai/nightly
+
+# runai-model-streamer speeds up loading of large safetensors from HF/S3
+uv pip install runai-model-streamer
+```
+
+> 💡 If you are on CUDA 12.x, replace `--torch-backend=cu130` with the matching
+> tag (e.g. `cu121`, `cu124`). Everything else stays the same.
+
+Then always launch `inference/serve_ar.sh` / `inference/serve_dflash.sh` with
+this venv activated (`source /dockerdata/venv-vllm/bin/activate`).
 
 ---
 
@@ -317,7 +347,7 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
 
 - [`docs/training.md`](docs/training.md) — training modes, hyperparameters, distributed setup
 - [`docs/data_format.md`](docs/data_format.md) — raw OCR JSONL schema and packing pipeline
-- [`docs/inference.md`](docs/inference.md) — vLLM install (with DFlash patch) and deployment tuning
+- [`docs/inference.md`](docs/inference.md) — vLLM install (nightly, DFlash included) and deployment tuning
 - [`docs/llama_cpp.md`](docs/llama_cpp.md) — PC-side deployment with llama.cpp (community & DFlash-adapted fork)
 - [`docs/benchmark.md`](docs/benchmark.md) — end-to-end speed benchmark
 

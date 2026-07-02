@@ -35,10 +35,34 @@ python inference/infer_dflash.py \
 
 Standard vLLM OpenAI-compatible server, no DFlash.
 
-### Prerequisites
+### Prerequisites — install vLLM (tested recipe)
+
+We use a **dedicated venv** for inference to keep vLLM nightly isolated. The
+recipe below is what has been validated end-to-end for HunyuanOCR-1.5 (both AR
+and DFlash):
+
 ```bash
-pip install vllm>=0.23.0
+# (optional) proxy — replace with yours if needed
+# export http_proxy=http://your.proxy:3128
+# export https_proxy=http://your.proxy:3128
+
+uv venv /dockerdata/venv-vllm --python 3.12
+source /dockerdata/venv-vllm/bin/activate
+
+# vLLM nightly (cu130); ships DFlash speculative-decoding support
+uv pip install -U vllm \
+    --torch-backend=cu130 \
+    --extra-index-url https://wheels.vllm.ai/nightly
+
+# runai-model-streamer speeds up loading of large safetensors from HF/S3
+uv pip install runai-model-streamer
 ```
+
+> 💡 On CUDA 12.x, replace `--torch-backend=cu130` with the matching tag
+> (e.g. `cu121`, `cu124`). Everything else stays the same.
+
+Always `source /dockerdata/venv-vllm/bin/activate` before launching the serve
+scripts below.
 
 ### Launch
 ```bash
@@ -86,31 +110,25 @@ print(r.choices[0].message.content)
 
 Enable DFlash speculative decoding for **~2.1× end-to-end speedup**.
 
-### Prerequisites — vLLM with DFlash patch
+### Prerequisites — vLLM nightly (DFlash included)
 
-DFlash requires a small patch to vLLM's speculative decoding registry:
+DFlash speculative decoding is bundled in the vLLM nightly wheel used above
+(§2). If you already followed the §2 install, you're done — no extra patch
+needed. Verify:
 
 ```bash
-# Option A: install pre-built wheel (recommended)
-pip install https://github.com/your-org/vllm-dflash/releases/download/v0.23.1rc1/vllm-0.23.1rc1+dflash-cp310-cp310-linux_x86_64.whl
-
-# Option B: build from source
-git clone https://github.com/your-org/vllm-dflash.git
-cd vllm-dflash && pip install -e .
-```
-
-Verify:
-```bash
+source /dockerdata/venv-vllm/bin/activate
 python -c "
-import vllm
+import vllm, inspect
 from vllm.engine.arg_utils import SpeculativeConfig
-# Check that 'dflash' is a supported method
-import inspect
 src = inspect.getsource(SpeculativeConfig)
-assert 'dflash' in src, 'DFlash not patched into vLLM'
-print('DFlash patch OK, vLLM:', vllm.__version__)
+assert 'dflash' in src, 'DFlash not present in this vLLM build'
+print('DFlash OK, vLLM:', vllm.__version__)
 "
 ```
+
+If the assert fails, you're on an older vLLM release; re-run the §2 nightly
+install.
 
 ### Prepare the DFlash checkpoint directory
 
