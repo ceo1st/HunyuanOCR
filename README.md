@@ -200,7 +200,7 @@ and the decoded text.
 ### B. vLLM production serving (OpenAI-compatible)
 
 The launch scripts mirror the internal deployment: served alias
-`tencent/HunyuanOCR-v2`, `-tp 1`, `--limit-mm-per-prompt '{"image":4,"video":0}'`,
+`tencent/HunyuanOCR-1-5`, `-tp 1`, `--limit-mm-per-prompt '{"image":4,"video":0}'`,
 `--trust_remote_code`, `--max-model-len 131072`.
 
 **Autoregressive baseline** (HunyuanOCR without DFlash), single GPU:
@@ -238,7 +238,7 @@ with the internal bench pipeline:
 ```bash
 python inference/infer_vllm_client.py \
     --host 127.0.0.1 --port 8000 \
-    --model tencent/HunyuanOCR-v2 \
+    --model tencent/HunyuanOCR-1-5 \
     --image /path/to/document.png
 # add --no-stream to disable streaming + early-stop
 ```
@@ -256,7 +256,7 @@ def data_url(p):
 
 client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:8000/v1")
 resp = client.chat.completions.create(
-    model="tencent/HunyuanOCR-v2",
+    model="tencent/HunyuanOCR-1-5",
     messages=[
         {"role": "system", "content": ""},
         {"role": "user", "content": [

@@ -20,7 +20,7 @@ Usage:
 
 Optional flags:
     --host / --port           default 127.0.0.1:8000
-    --model                   default 'tencent/HunyuanOCR-v2' (must match --served-model-name)
+--model                   default 'tencent/HunyuanOCR-1-5' (must match --served-model-name)
     --prompt                  default OCR-to-markdown prompt (Chinese)
     --max-tokens              default 4096
     --repetition-penalty      default 1.08
@@ -132,7 +132,7 @@ def main():
     ap.add_argument("--prompt", default=DEFAULT_PROMPT)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
-    ap.add_argument("--model", default="tencent/HunyuanOCR-v2",
+    ap.add_argument("--model", default="tencent/HunyuanOCR-1-5",
                     help="Must match vLLM --served-model-name")
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--temperature", type=float, default=0.0)

@@ -12,7 +12,7 @@
 set -e
 
 MODEL_PATH=${MODEL_PATH:-/path/to/HunyuanOCR/base/model}
-SERVED_NAME=${SERVED_NAME:-tencent/HunyuanOCR-v2}
+SERVED_NAME=${SERVED_NAME:-tencent/HunyuanOCR-1-5}
 PORT=${PORT:-8000}
 GPU=${GPU:-0}
 GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.9}
