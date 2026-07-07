@@ -48,7 +48,7 @@ IMAGE_DIR = "/path/to/eval/images"
 SAMPLE_LIST = "./speed_eval_set_930.txt"
 SERVER_URL = "http://127.0.0.1:8001/v1"
 MODEL_NAME = "/path/to/HunyuanOCR/base"
-PROMPT = "Extract all text from this document as markdown."
+PROMPT = "提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。"
 
 # collect images
 want = set(l.strip() for l in open(SAMPLE_LIST))
