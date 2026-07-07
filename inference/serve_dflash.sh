@@ -11,7 +11,7 @@ set -e
 
 MODEL_PATH=${MODEL_PATH:-/path/to/HunyuanOCR/base/model}
 DFLASH_PATH=${DFLASH_PATH:-./hyocr_dflash}      # dir with config.json + model.safetensors + dflash.py
-SERVED_NAME=${SERVED_NAME:-tencent/HunyuanOCR-1-5}
+SERVED_NAME=${SERVED_NAME:-tencent/HunyuanOCR}
 PORT=${PORT:-8001}
 GPU=${GPU:-0}
 GPU_MEM_UTIL=${GPU_MEM_UTIL:-0.9}

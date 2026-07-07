@@ -7,6 +7,16 @@ per-request latency. Aligned with the production `vllm/infer_vllm_8gpu.py`
 so results match what the internal bench pipeline produces on the same server
 started by `serve_ar.sh` / `serve_dflash.sh`.
 
+Post-processing (tail-repetition detection / cleanup / streaming early-stop,
+image encoding, and the doc_parse-only markdown normalization) lives in
+`hunyuan_utils.py` and is imported here so the exact same logic is shared across
+the single-image client, batch runners and eval pipelines.
+
+Prompt selection is LOCKED to a fixed set of official task types via
+`--task-type` (see `hunyuan_tasks.py`). Free-form prompt editing is intentionally
+NOT exposed: hand-tweaked instructions were observed to silently degrade model
+quality, so users pick a task, not a prompt.
+
 Usage:
     # 1. start the server (in another terminal)
     bash inference/serve_ar.sh          # port 8000, AR baseline
@@ -16,123 +26,59 @@ Usage:
     # 2. send a single-image inference request
     python inference/infer_vllm_client.py \
         --image /path/to/document.png \
+        --task-type doc_parse \
         --port 8000
+
+    # list all task types
+    python inference/infer_vllm_client.py --list-tasks
 
 Optional flags:
     --host / --port           default 127.0.0.1:8000
---model                   default 'tencent/HunyuanOCR-1-5' (must match --served-model-name)
-    --prompt                  default OCR-to-markdown prompt (Chinese)
+    --model                   default 'tencent/HunyuanOCR' (must match --served-model-name)
+    --task-type               one of the official task types (default: doc_parse)
     --max-tokens              default 4096
     --repetition-penalty      default 1.08
     --no-stream               disable streaming + early-stop (one-shot generation)
 """
 import argparse
-import base64
 import sys
 import time
 from pathlib import Path
-from typing import List
 
-
-DEFAULT_PROMPT = (
-    "提取文档图片中正文的所有信息用markdown格式表示，"
-    "其中页眉、页脚部分忽略，表格用html格式表达，"
-    "文档中公式用latex格式表示，按照阅读顺序组织进行解析。"
+# Shared output utilities (streaming/early-stop + doc_parse markdown normalization).
+from hunyuan_utils import (
+    clean_repeated_substrings,
+    encode_image_as_data_url,
+    infer_stream,
+    process_one as doc_parse_normalize,
+)
+# Fixed official task → prompt mapping (no free-form prompt).
+from hunyuan_tasks import (
+    TASK_PROMPTS,
+    TASK_DESCRIPTIONS,
+    DEFAULT_TASK,
+    get_prompt,
 )
 
 
-# ---------- tail-repetition helpers (mirror vllm/infer_vllm_8gpu.py) ----------
-def has_tail_repetition(text: str, min_repeats: int = 8, max_unit: int = 256) -> bool:
-    """Detect if the tail of `text` is stuck in a small repeated unit."""
-    n = len(text)
-    if n < min_repeats * 2:
-        return False
-    upper = min(max_unit, n // min_repeats)
-    for length in range(1, upper + 1):
-        unit = text[-length:]
-        if not unit.strip():
-            continue
-        ok = True
-        for k in range(2, min_repeats + 1):
-            if text[-length * k:-length * (k - 1)] != unit:
-                ok = False
-                break
-        if ok:
-            return True
-    return False
-
-
-def clean_repeated_substrings(text: str, min_repeats: int = 10) -> str:
-    """Trim long repeated suffixes as a final safety net."""
-    n = len(text)
-    if n < 2000:
-        return text
-    for length in range(2, n // min_repeats + 1):
-        candidate = text[-length:]
-        count = 0
-        i = n - length
-        while i >= 0 and text[i:i + length] == candidate:
-            count += 1
-            i -= length
-        if count >= min_repeats:
-            return text[: n - length * (count - 1)]
-    return text
-
-
-# ---------- image encoding ----------
-def encode_image_as_data_url(path: str) -> str:
-    """Read image → base64 data URL. Mime is fixed to `image/jpeg` to match the
-    production `vllm/infer_vllm_8gpu.py` behavior (vLLM does not care about the
-    declared mime for base64 image payloads)."""
-    with open(path, "rb") as f:
-        b64 = base64.b64encode(f.read()).decode("utf-8")
-    return f"data:image/jpeg;base64,{b64}"
-
-
-# ---------- inference ----------
-def infer_stream(client, common_kwargs, repeat_min_repeats: int) -> tuple[str, bool]:
-    """Streaming generation with tail-repetition early-stop.
-
-    Returns (text, early_stopped).
-    """
-    stream = client.chat.completions.create(stream=True, **common_kwargs)
-    parts: List[str] = []
-    acc_len = 0
-    next_check_at = 4000       # start checking after 4k chars
-    check_step = 1000
-    early_stopped = False
-
-    for event in stream:
-        if not event.choices:
-            continue
-        delta = event.choices[0].delta
-        piece = getattr(delta, "content", None)
-        if not piece:
-            continue
-        parts.append(piece)
-        acc_len += len(piece)
-
-        if acc_len >= next_check_at:
-            next_check_at = acc_len + check_step
-            tail = "".join(parts)[-8000:]
-            if has_tail_repetition(tail, min_repeats=repeat_min_repeats):
-                early_stopped = True
-                try:
-                    stream.close()
-                except Exception:
-                    pass
-                break
-
-    return "".join(parts), early_stopped
+def _print_task_list():
+    print("Available task types (--task-type):")
+    for key in TASK_PROMPTS:
+        print(f"  {key:18s} {TASK_DESCRIPTIONS.get(key, '')}")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--image", required=True, help="Path to input image")
-    ap.add_argument("--prompt", default=DEFAULT_PROMPT)
+    ap.add_argument("--image", help="Path to input image")
+    ap.add_argument("--task-type", default=DEFAULT_TASK, choices=list(TASK_PROMPTS.keys()),
+                    metavar="TASK",
+                    help="official task type (use --list-tasks to see all); "
+                         f"default: {DEFAULT_TASK}")
+    ap.add_argument("--list-tasks", action="store_true",
+                    help="print all task types and exit")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
-    ap.add_argument("--model", default="tencent/HunyuanOCR-1-5",
+    ap.add_argument("--model", default="tencent/HunyuanOCR",
                     help="Must match vLLM --served-model-name")
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--temperature", type=float, default=0.0)
@@ -143,12 +89,24 @@ def main():
                     help="tail-repeats threshold that triggers streaming early-stop")
     ap.add_argument("--no-stream", action="store_true",
                     help="disable streaming + early-stop (one-shot generation)")
+    ap.add_argument("--no-doc-postprocess", action="store_true",
+                    help="disable the doc_parse-only markdown normalization "
+                         "(hunyuan_utils.process_one)")
     ap.add_argument("--timeout", type=float, default=3600.0)
     args = ap.parse_args()
 
+    if args.list_tasks:
+        _print_task_list()
+        return
+
+    if not args.image:
+        print("[ERROR] --image is required (or use --list-tasks)", file=sys.stderr)
+        sys.exit(1)
     if not Path(args.image).is_file():
         print(f"[ERROR] image not found: {args.image}", file=sys.stderr)
         sys.exit(1)
+
+    prompt = get_prompt(args.task_type)
 
     from openai import OpenAI
 
@@ -165,7 +123,7 @@ def main():
             "role": "user",
             "content": [
                 {"type": "image_url", "image_url": {"url": image_url}},
-                {"type": "text", "text": args.prompt},
+                {"type": "text", "text": prompt},
             ],
         },
     ]
@@ -184,7 +142,7 @@ def main():
     )
 
     print(f"[info] POST http://{args.host}:{args.port}/v1/chat/completions "
-          f"(model={args.model}, stream={not args.no_stream})")
+          f"(model={args.model}, task={args.task_type}, stream={not args.no_stream})")
     t = time.time()
 
     early_stopped = False
@@ -199,9 +157,16 @@ def main():
         )
 
     text = clean_repeated_substrings(text)
+
+    # doc_parse only: normalize markdown to OmniDocBench GT convention.
+    doc_pp_stats = None
+    if args.task_type == "doc_parse" and not args.no_doc_postprocess:
+        text, doc_pp_stats = doc_parse_normalize(text)
+
     dt = time.time() - t
 
     print("=" * 60)
+    print(f"Task             : {args.task_type}")
     print(f"Latency          : {dt:.2f}s")
     print(f"Output chars     : {len(text)}")
     if usage is not None:
@@ -211,6 +176,10 @@ def main():
             print(f"tok/s            : {usage.completion_tokens / dt:.1f}")
     if early_stopped:
         print("Early-stopped    : yes (tail repetition detected)")
+    if doc_pp_stats:
+        applied = {k: v for k, v in doc_pp_stats.items() if v}
+        if applied:
+            print(f"Doc-postprocess  : {applied}")
     print("=" * 60)
     print(text)
 
