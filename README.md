@@ -225,19 +225,15 @@ python inference/infer_dflash.py \
     --num-spec-tokens 15
 ```
 
-The default OCR prompt is:
+The default OCR prompt for document parsing task is:
 
 ```
-提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，
-表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
+提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
 ```
 
 Override with `--prompt "..."`. Both scripts print load time, generation latency
 and the decoded text.
 
-> ℹ️ `infer_dflash.py` only verifies that the DFlash draft checkpoint loads and
-> produces a matching AR reference on the single image. Real speculative-decoding
-> acceleration is only realized under vLLM (see below).
 
 ### B. vLLM production serving (OpenAI-compatible)
 
@@ -346,7 +342,7 @@ resp = client.chat.completions.create(
             {"type": "text", "text": "请提取图片中的文字内容。"},
         ]},
     ],
-    max_tokens=4096,
+    max_tokens=32768,
     temperature=0.0,
     top_p=1.0,
     extra_body={"top_k": -1, "repetition_penalty": 1.08, "skip_special_tokens": True},
