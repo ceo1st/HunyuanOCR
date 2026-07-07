@@ -6,7 +6,7 @@
 
 <div align="center">
 
-# HunyuanOCR-1.5: Towards Efficient and Effective E2E OCR
+# HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better
 
 </div>
 
@@ -20,11 +20,8 @@
 </p>
 
 > [!NOTE]
-> **The [technical report](https://arxiv.org/pdf/2607.04884) of HunyuanOCR-1.5 is available; the model weights are coming very soon.**
-> This `develop` branch hosts the open-source **training & inference toolkit** for HunyuanOCR-1.5.
->
 > 👉 Looking for the original **HunyuanOCR 1.0** release? Switch to the
-> [`main`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/main) branch, or read
+> [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) branch, or read
 > [`README_v1.0.md`](./README_v1.0.md) · [`README_zh_v1.0.md`](./README_zh_v1.0.md).
 
 ---
@@ -292,6 +289,14 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
 - [`docs/inference.md`](docs/inference.md) — vLLM install (nightly, DFlash included) and deployment tuning
 - [`docs/llama_cpp.md`](docs/llama_cpp.md) — PC-side deployment with llama.cpp (community & DFlash-adapted fork)
 - [`docs/benchmark.md`](docs/benchmark.md) — end-to-end speed benchmark
+
+---
+
+## 🙏 Acknowledgements
+
+We would like to thank [Qwen](https://github.com/QwenLM/Qwen3.6) and [DFlash](https://github.com/z-lab/dflash) for their valuable models and ideas.
+
+Special thanks to the Hugging Face community for their Day-0 support.
 
 ---
 

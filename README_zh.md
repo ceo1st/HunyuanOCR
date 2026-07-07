@@ -6,7 +6,7 @@
 
 <div align="center">
 
-# HunyuanOCR-1.5：迈向高效且强大的端到端 OCR
+# HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better
 
 </div>
 
@@ -20,11 +20,8 @@
 </p>
 
 > [!NOTE]
-> **HunyuanOCR-1.5 的[技术报告](https://arxiv.org/pdf/2607.04884)已发布，模型权重即将发布。**
-> 当前 `develop` 分支提供 HunyuanOCR-1.5 的开源**训练与推理工具集**。
->
 > 👉 需要原始的 **HunyuanOCR 1.0** 版本？请切换到
-> [`main`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/main) 分支，或阅读
+> [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) 分支，或阅读
 > [`README_v1.0.md`](./README_v1.0.md) · [`README_zh_v1.0.md`](./README_zh_v1.0.md)。
 
 ---
@@ -259,6 +256,14 @@ build/bin/llama-server \
 - [`docs/inference.md`](docs/inference.md) —— vLLM 安装（nightly，含 DFlash）与部署调优
 - [`docs/llama_cpp.md`](docs/llama_cpp.md) —— 使用 llama.cpp 的 PC 端部署（社区版 & DFlash 适配分支）
 - [`docs/benchmark.md`](docs/benchmark.md) —— 端到端速度基准测试
+
+---
+
+## 🙏 致谢
+
+我们衷心感谢 [Qwen](https://github.com/QwenLM/Qwen3.6) 与 [DFlash](https://github.com/z-lab/dflash)，感谢他们宝贵的模型与研究思路。
+
+特别感谢 Hugging Face 社区提供的 Day-0 支持。
 
 ---
 
