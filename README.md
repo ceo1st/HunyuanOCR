@@ -1,13 +1,14 @@
 <div align="center">
 
+[中文阅读](README_zh.md)
+
 # HunyuanOCR-1.5: Towards Efficient and Effective E2E OCR
 
-</div>
+🤗 [Model](https://huggingface.co/tencent/HunyuanOCR) | 📄 [Paper](https://arxiv.org/pdf/2607.04884)
 
-> 📝 **Note:** The technical report and model weights of HunyuanOCR-1.5 are **coming very soon**.
-> This branch (`develop`) hosts the open-source **training and inference toolkit** for HunyuanOCR-1.5.
-> For the original HunyuanOCR 1.0 release, please switch to the `main` branch or refer to
-> [`README_v1.0.md`](./README_v1.0.md) / [`README_zh_v1.0.md`](./README_zh_v1.0.md).
+📝 Note: For the original HunyuanOCR 1.0 release, please switch to the `main` branch or refer to `README_v1.0.md` / `README_zh_v1.0.md`.
+
+</div>
 
 ---
 
