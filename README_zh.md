@@ -16,11 +16,11 @@
 
 <p align="center">
 <a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 模型</b></a> |
-<a href="https://arxiv.org/abs/2511.19575"><b>📄 技术报告 (v1.0)</b></a>
+<a href="https://arxiv.org/pdf/2607.04884"><b>📄 技术报告</b></a>
 </p>
 
 > [!NOTE]
-> **HunyuanOCR-1.5 的技术报告与模型权重即将发布。**
+> **HunyuanOCR-1.5 的[技术报告](https://arxiv.org/pdf/2607.04884)已发布，模型权重即将发布。**
 > 当前 `develop` 分支提供 HunyuanOCR-1.5 的开源**训练与推理工具集**。
 >
 > 👉 需要原始的 **HunyuanOCR 1.0** 版本？请切换到
@@ -51,18 +51,12 @@
 
 ## ⚙️ 环境
 
+### 训练
+
 - Python 3.10+（已在 3.12 上测试）
 - PyTorch 2.1+（CUDA 12.1+；已完整测试 cu130 构建）
 - transformers 4.57+
 - DeepSpeed 0.14+
-- vLLM —— 根据运行内容二选一：
-  - **AR 基线 / 单图服务**：`vllm==0.18.1`（正式发布版）已原生支持
-    `HunYuanVLForConditionalGeneration`，无需 nightly、无需补丁。
-  - **DFlash 投机解码**：需要 **vLLM nightly**（已测试 0.23.x cu130 构建），
-    它注册了 `dflash` 投机解码方法。
-  调优细节参见 [`docs/inference.md`](docs/inference.md)。
-
-### 训练依赖
 
 ```bash
 pip install -r requirements.txt
@@ -70,40 +64,21 @@ pip install -r requirements.txt
 pip install flash-attn --no-build-isolation
 ```
 
-### 推理依赖（vLLM）
+### 推理
 
-我们为推理使用一个**独立的 venv**，以便将 vLLM 与训练环境隔离。
+推理拆分为 [`inference/`](inference) 下的**三套自包含、互斥的环境**。vLLM（AR / DFlash）
+与原生 transformers 推理需要**不兼容的 `transformers` 版本，无法共存于同一环境**——
+这是实测验证的硬约束，而非偏好：
 
-**方案 1 —— AR 基线 / 单图服务（`vllm==0.18.1`，推荐）。**
-正式发布版原生支持 `HunYuanVLForConditionalGeneration`，无需 nightly 或补丁：
+| 方案 | vLLM | DFlash 加速 | transformers | CUDA | 适用 |
+|---|:-:|:-:|:-:|---|---|
+| [`inference/vllm_0_18_1`](inference/vllm_0_18_1) | 0.18.1（正式版） | ❌ | ❌ | 12.x | 最省心，仅 AR |
+| [`inference/nightly`](inference/nightly) | nightly | ✅ | ❌ | 13 | AR + DFlash 加速 |
+| [`inference/transformers`](inference/transformers) | — | — | ✅ 5.13.0 | 匹配宿主驱动 | 原生 HF 推理 |
 
-```bash
-pip install "vllm==0.18.1" "openai>=1.30.0" "pillow>=10.0.0"
-```
+每套子目录各自附带独立的 README 和 `requirements.txt`。选型指南与完整原因见
+[`inference/README.md`](inference/README.md)，性能调优见 [`docs/inference.md`](docs/inference.md)。
 
-验证模型是否已注册：
-
-```bash
-python -c "from vllm.model_executor.models.registry import ModelRegistry; \
-print('HunYuanVL supported:', 'HunYuanVLForConditionalGeneration' in ModelRegistry.get_supported_archs())"
-# 预期输出: HunYuanVL supported: True
-```
-
-**方案 2 —— DFlash 投机解码（vLLM nightly）。**
-DFlash 投机解码服务需要 nightly 构建，它注册了 `dflash` 方法：
-
-```bash
-# vLLM nightly（cu130）；自带 DFlash 投机解码支持
-uv pip install -U vllm \
-    --torch-backend=cu130 \
-    --extra-index-url https://wheels.vllm.ai/nightly
-
-# runai-model-streamer 可加速从 HF/S3 加载大型 safetensors
-uv pip install runai-model-streamer
-```
-
-> 💡 如果你使用的是 CUDA 12.x，请将 `--torch-backend=cu130` 替换为对应的
-> 标签（如 `cu121`、`cu124`），其余保持不变。
 ---
 
 ## 🚀 训练
@@ -183,167 +158,64 @@ bash scripts/sft_dflash_finetune.sh
 
 ## 🧪 推理
 
-提供三条路径，均可在**单张图片**上运行以做冒烟测试：
+HunyuanOCR-1.5 在 [`inference/`](inference) 下提供三套服务 / 推理环境，另加一个可选的
+PC 端 llama.cpp 路径。三套共享同一份权重、同一套 task-type prompt + 采样 + 后处理，
+输出可直接横向对比。
 
-- **A. HuggingFace transformers** —— 单图，易于修改，推荐用于正确性调试。
-- **B. vLLM（OpenAI 兼容）** —— 生产级服务；实现真正的 DFlash 加速所必需。
-- **C. llama.cpp** —— CPU / 消费级 GPU / 笔记本部署（见下文）。
+- **A. vLLM 0.18.1（正式版，CUDA 12）—— 仅 AR。** 最省心：原生支持 HunyuanOCR，
+  无需 nightly、无需补丁。→ [`inference/vllm_0_18_1`](inference/vllm_0_18_1)
+- **B. vLLM nightly（CUDA 13）—— AR + DFlash 投机解码。** 对长输出无损加速；
+  内置草稿模型的配置与代码，权重从 HF 拉取。→ [`inference/nightly`](inference/nightly)
+- **C. HuggingFace transformers 5.13.0 —— 原生多卡推理。** 用于对齐 / 精度校验；
+  不经 vLLM。→ [`inference/transformers`](inference/transformers)
+- **D. llama.cpp —— CPU / 消费级 GPU / 笔记本。** GGUF 部署（见下文）。
 
-### A. HuggingFace transformers（单图调试）
+> ⚠️ A / B / C 三套是**互斥环境**：vLLM 与原生 transformers 需要不兼容的
+> `transformers` 版本。选择前请先读 [`inference/README.md`](inference/README.md)。
 
-脚本使用 transformers ≥ 4.57（HunyuanOCR-1.5 系列）中官方集成的
-`HunYuanVLForConditionalGeneration` + `AutoProcessor`。
-
-**基座模型 —— 单张图片：**
-
-```bash
-python inference/infer_base.py \
-    --model /path/to/HunyuanOCR/base/model \
-    --image /path/to/document.png \
-    --max-new-tokens 8000
-```
-
-**基座模型 + DFlash 草稿 —— 在单图上做正确性 / 草稿加载校验：**
-
-```bash
-python inference/infer_dflash.py \
-    --model /path/to/HunyuanOCR/base/model \
-    --dflash-model ./hyocr_dflash/ \
-    --image /path/to/document.png \
-    --num-spec-tokens 15
-```
-
-默认的 OCR 提示词为：
-
-```
-提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，
-表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
-```
-
-可用 `--prompt "..."` 覆盖。两个脚本都会打印加载耗时、生成延迟和解码后的文本。
-
-> ℹ️ `infer_dflash.py` 仅验证 DFlash 草稿检查点能否加载，并在单图上产出与 AR 一致的
-> 参考结果。真正的投机解码加速只有在 vLLM 下才能实现（见下文）。
-
-### B. vLLM 生产级服务（OpenAI 兼容）
-
-启动脚本与内部部署保持一致：服务别名
-`tencent/HunyuanOCR`、`-tp 1`、`--limit-mm-per-prompt '{"image":4,"video":0}'`、
-`--trust_remote_code`、`--max-model-len 131072`。
-
-**下载权重。** 目标模型（1.5）位于
-[`tencent/HunyuanOCR`](https://huggingface.co/tencent/HunyuanOCR) 仓库根目录；DFlash
-草稿模型在其 [`dflash/`](https://huggingface.co/tencent/HunyuanOCR/tree/main/dflash)
-子目录下，此前的 1.0 版本归档在 `v1.0/` 下。
+### 下载权重
 
 ```bash
 pip install -U "huggingface_hub[cli]"
-
-# 目标基座（1.5）—— 跳过归档的 1.0 以节省空间
-hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
-
-# DFlash 草稿 —— vLLM 的 --speculative-config 不接受 HF 子目录，
-# 因此把 dflash/ 下载到一个扁平的本地目录，并让 DFLASH_PATH 指向它：
-python -c "from huggingface_hub import snapshot_download; import shutil, os; \
-d=snapshot_download('tencent/HunyuanOCR', allow_patterns=['dflash/*']); \
-shutil.copytree(os.path.join(d,'dflash'), './hyocr_dflash', dirs_exist_ok=True)"
+huggingface-cli download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
 ```
 
-**自回归基线**（不带 DFlash 的 HunyuanOCR），单 GPU：
+下载内容同时包含主模型和 `dflash/` 草稿模型。
+
+### 快速开始（vLLM AR，单卡）
+
+按 [`inference/vllm_0_18_1/requirements.txt`](inference/vllm_0_18_1/requirements.txt)
+装好环境后，启动 OpenAI 兼容服务（对外服务名 `tencent/HunyuanOCR`、`-tp 1`、
+`--max-model-len 131072`）：
 
 ```bash
-MODEL_PATH=./HunyuanOCR \
-GPU=0 PORT=8000 GPU_MEM_UTIL=0.9 \
-bash inference/serve_ar.sh
+MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vllm_0_18_1/serve.sh
+curl -sf http://127.0.0.1:8000/v1/models     # 就绪检查
 ```
 
-**DFlash 投机解码**（在有 DFlash 草稿时推荐；
-需要 vLLM nightly，见 环境 → 方案 2）：
+发送单张图片。提示词通过 `--task-type` 锁定为官方任务类型（`--list-tasks` 查看全部 12 种）；
+采样参数（`temperature=0.0`、`top_p=1.0`、`top_k=-1`、`repetition_penalty=1.08`）
+与尾部重复早停 / 清洗均已内置：
 
 ```bash
-MODEL_PATH=./HunyuanOCR \
-DFLASH_PATH=./hyocr_dflash \
-GPU=0 PORT=8001 GPU_MEM_UTIL=0.9 \
-NUM_SPEC_TOKENS=15 \
-bash inference/serve_dflash.sh
+python inference/vllm_0_18_1/infer_vllm_client.py \
+    --image /path/to/document.png --task-type doc_parse \
+    --model tencent/HunyuanOCR --port 8000 --max-tokens 32768
 ```
 
-两个端点都在 `http://<host>:<port>/v1/chat/completions` 暴露标准的 vLLM
-OpenAI 兼容路由。可用以下命令等待服务就绪：
+对整个目录做批量推理（多端点并发、可断点续跑）：
 
 ```bash
-curl -sf http://127.0.0.1:8000/v1/models
-# 或
-tail -f vllm_ar_8000.log
+python inference/vllm_0_18_1/batch_infer.py \
+    --image-dir /path/to/images --out-dir /path/to/output \
+    --ports 8000 --task-type doc_parse --max-tokens 32768 --concurrency 16
 ```
 
-**单图客户端** —— 用附带的脚本发送单张图片。它与内部 bench 流水线保持一致的
-采样参数（`temperature=0.0`、`top_p=1.0`、`top_k=-1`、
-`repetition_penalty=1.08`）以及流式的尾部重复早停策略。提示词的选择通过
-`--task-type` 锁定为一组固定的官方任务类型（运行 `--list-tasks` 查看全部）：
+需要 **DFlash 加速**请用 [`inference/nightly`](inference/nightly)（`serve_dflash.sh`）；
+需要**原生 transformers 推理**请用 [`inference/transformers`](inference/transformers)。
+每套子目录 README 都包含完整的环境安装步骤、任务类型表和多卡说明。
 
-```bash
-python inference/infer_vllm_client.py \
-    --host 127.0.0.1 --port 8000 \
-    --model tencent/HunyuanOCR \
-    --image /path/to/document.png \
-    --task-type doc_parse \
-    --max-tokens 32768
-# 加 --no-stream 可关闭流式 + 早停
-# 加 --no-doc-postprocess 可关闭 doc_parse 的 markdown 规范化
-```
-
-可用任务类型（`--task-type`）：`doc_parse`（默认）、`structured_parse`、
-`spotting_json`、`spotting_hunyuan`、`layout`、`layout_parse`、`chart_parse`、
-`formula`、`table`、`doc_trans_en2zh`、`trans_other2en`、`trans_other2zh`。
-
-若要对整个目录做**批量**推理，请使用 `inference/batch_infer.py`（同样的
-任务类型，支持多端点并发、可断点续跑）：
-
-```bash
-python inference/batch_infer.py \
-    --image-dir /path/to/images \
-    --out-dir   /path/to/output \
-    --ports 8000 \
-    --task-type doc_parse \
-    --max-tokens 32768 \
-    --concurrency 16
-```
-
-或用 OpenAI SDK 手写（与 `infer_vllm_client.py` 的行为一致，
-但不含流式早停）：
-
-```python
-import base64
-from openai import OpenAI
-
-def data_url(p):
-    # MIME 固定为 image/jpeg，与 vllm/infer_vllm_8gpu.py 一致
-    return f"data:image/jpeg;base64,{base64.b64encode(open(p,'rb').read()).decode()}"
-
-client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:8000/v1")
-resp = client.chat.completions.create(
-    model="tencent/HunyuanOCR",
-    messages=[
-        {"role": "system", "content": ""},
-        {"role": "user", "content": [
-            {"type": "image_url", "image_url": {"url": data_url("/path/to/document.png")}},
-            {"type": "text", "text": "请提取图片中的文字内容。"},
-        ]},
-    ],
-    max_tokens=4096,
-    temperature=0.0,
-    top_p=1.0,
-    extra_body={"top_k": -1, "repetition_penalty": 1.08, "skip_special_tokens": True},
-)
-print(resp.choices[0].message.content)
-```
-
-> ⚠️ 对于**多图**请求（每个 prompt 超过 1 张图），需要一个额外的 vLLM 形状修复
-> 补丁 —— 这与单图 OCR 无关。若计划运行多图 bench，请参见
-> [`docs/inference.md`](docs/inference.md)。
-
-### C. PC 端部署（llama.cpp）
+### PC 端部署（llama.cpp）
 
 对于 **CPU / 消费级 GPU / 笔记本** 环境，HunyuanOCR-1.5 在将权重转换为 GGUF 后，也可以
 通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 部署。

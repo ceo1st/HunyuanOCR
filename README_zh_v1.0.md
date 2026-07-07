@@ -1,6 +1,6 @@
 <div align="center">
 
-[English Version](./README.md)
+[English Version](./README_v1.0.md)
 
 </div>
 

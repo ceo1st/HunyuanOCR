@@ -16,11 +16,11 @@
 
 <p align="center">
 <a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 Model</b></a> |
-<a href="https://arxiv.org/abs/2511.19575"><b>📄 Paper (v1.0)</b></a>
+<a href="https://arxiv.org/pdf/2607.04884"><b>📄 Paper</b></a>
 </p>
 
 > [!NOTE]
-> **The technical report and model weights of HunyuanOCR-1.5 are coming very soon.**
+> **The [technical report](https://arxiv.org/pdf/2607.04884) of HunyuanOCR-1.5 is available; the model weights are coming very soon.**
 > This `develop` branch hosts the open-source **training & inference toolkit** for HunyuanOCR-1.5.
 >
 > 👉 Looking for the original **HunyuanOCR 1.0** release? Switch to the
@@ -77,62 +77,36 @@ that the community can reproduce, fine-tune, and extend OCR-specialized VLMs.
 
 ## ⚙️ Environment
 
+### Training
+
 - Python 3.10+ (3.12 tested)
 - PyTorch 2.1+ (CUDA 12.1+; a cu130 build has been tested end-to-end)
 - transformers 4.57+
 - DeepSpeed 0.14+
-- vLLM — two options depending on what you run:
-  - **AR baseline / single-image serving**: `vllm==0.18.1` (release build) already
-    ships native `HunYuanVLForConditionalGeneration` support — no nightly, no patch.
-  - **DFlash speculative decoding**: requires **vLLM nightly** (0.23.x, cu130 build
-    tested), which registers the `dflash` speculative-decoding method.
-  See [`docs/inference.md`](docs/inference.md) for tuning.
-
-### Training dependencies
 
 ```bash
 pip install -r requirements.txt
-# flash-attn requires manual build:
+# flash-attn requires a manual build:
 pip install flash-attn --no-build-isolation
 ```
 
-### Inference dependencies (vLLM)
+### Inference
 
-We use a **dedicated venv** for inference to keep vLLM isolated from the
-training environment.
+Inference is split into **three self-contained, mutually exclusive setups** under
+[`inference/`](inference). vLLM (AR / DFlash) and native transformers inference
+require different, incompatible `transformers` versions and **cannot share one
+environment** — this is a validated constraint, not a preference:
 
-**Option 1 — AR baseline / single-image serving (`vllm==0.18.1`, recommended).**
-The release build natively supports `HunYuanVLForConditionalGeneration`, so no
-nightly or patch is required:
+| Setup | vLLM | DFlash accel. | transformers | CUDA | Best for |
+|---|:-:|:-:|:-:|---|---|
+| [`inference/vllm_0_18_1`](inference/vllm_0_18_1) | 0.18.1 (release) | ❌ | ❌ | 12.x | simplest setup, AR only |
+| [`inference/nightly`](inference/nightly) | nightly | ✅ | ❌ | 13 | AR + DFlash acceleration |
+| [`inference/transformers`](inference/transformers) | — | — | ✅ 5.13.0 | host driver | native HF inference |
 
-```bash
-pip install "vllm==0.18.1" "openai>=1.30.0" "pillow>=10.0.0"
-```
+Each subfolder ships its own README and `requirements.txt`. See
+[`inference/README.md`](inference/README.md) for the selection guide and the full
+rationale, and [`docs/inference.md`](docs/inference.md) for performance tuning.
 
-Verify the model is registered:
-
-```bash
-python -c "from vllm.model_executor.models.registry import ModelRegistry; \
-print('HunYuanVL supported:', 'HunYuanVLForConditionalGeneration' in ModelRegistry.get_supported_archs())"
-# expected: HunYuanVL supported: True
-```
-
-**Option 2 — DFlash speculative decoding (vLLM nightly).**
-DFlash speculative-decoding serving requires the nightly build, which registers
-the `dflash` method:
-
-```bash
-# vLLM nightly (cu130); ships DFlash speculative-decoding support
-uv pip install -U vllm \
-    --torch-backend=cu130 \
-    --extra-index-url https://wheels.vllm.ai/nightly
-
-# runai-model-streamer speeds up loading of large safetensors from HF/S3
-uv pip install runai-model-streamer
-```
-
-> 💡 If you are on CUDA 12.x, replace `--torch-backend=cu130` with the matching
-> tag (e.g. `cu121`, `cu124`). Everything else stays the same.
 ---
 
 ## 🚀 Training
@@ -213,170 +187,68 @@ Entry: [`train/train_draft_from_dflash.py`](train/train_draft_from_dflash.py).
 
 ## 🧪 Inference
 
-Three paths are provided, all runnable on a **single image** for smoke-testing:
+HunyuanOCR-1.5 provides three server/inference setups under [`inference/`](inference),
+plus an optional PC-side path via llama.cpp. All three share the same weights and
+the same task-type prompts + sampling + post-processing, so their outputs are
+directly comparable.
 
-- **A. HuggingFace transformers** — single-image, easy to hack, recommended for correctness debugging.
-- **B. vLLM (OpenAI-compatible)** — production serving; required for real DFlash speedup.
-- **C. llama.cpp** — CPU / consumer-GPU / laptop deployment (see below).
+- **A. vLLM 0.18.1 (release, CUDA 12) — AR only.** Simplest to install; native
+  HunyuanOCR support, no nightly or patch. → [`inference/vllm_0_18_1`](inference/vllm_0_18_1)
+- **B. vLLM nightly (CUDA 13) — AR + DFlash speculative decoding.** Lossless
+  acceleration for long outputs; draft config/code bundled, weight pulled from HF. → [`inference/nightly`](inference/nightly)
+- **C. HuggingFace transformers 5.13.0 — native multi-GPU inference.** For
+  alignment / accuracy checks; no vLLM. → [`inference/transformers`](inference/transformers)
+- **D. llama.cpp — CPU / consumer-GPU / laptop.** GGUF deployment (see below).
 
-### A. HuggingFace transformers (single-image debug)
+> ⚠️ Setups A / B / C are **mutually exclusive environments**: vLLM and native
+> transformers require incompatible `transformers` versions. Read
+> [`inference/README.md`](inference/README.md) before choosing.
 
-The scripts use the official `HunYuanVLForConditionalGeneration` + `AutoProcessor`
-integration shipped in transformers ≥ 4.57 (HunyuanOCR-1.5 series).
-
-**Base model — one image:**
-
-```bash
-python inference/infer_base.py \
-    --model /path/to/HunyuanOCR/base/model \
-    --image /path/to/document.png \
-    --max-new-tokens 8000
-```
-
-**Base model + DFlash draft — correctness / draft-load check on one image:**
-
-```bash
-python inference/infer_dflash.py \
-    --model /path/to/HunyuanOCR/base/model \
-    --dflash-model ./hyocr_dflash/ \
-    --image /path/to/document.png \
-    --num-spec-tokens 15
-```
-
-The default OCR prompt is:
-
-```
-提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，
-表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
-```
-
-Override with `--prompt "..."`. Both scripts print load time, generation latency
-and the decoded text.
-
-> ℹ️ `infer_dflash.py` only verifies that the DFlash draft checkpoint loads and
-> produces a matching AR reference on the single image. Real speculative-decoding
-> acceleration is only realized under vLLM (see below).
-
-### B. vLLM production serving (OpenAI-compatible)
-
-The launch scripts mirror the internal deployment: served alias
-`tencent/HunyuanOCR`, `-tp 1`, `--limit-mm-per-prompt '{"image":4,"video":0}'`,
-`--trust_remote_code`, `--max-model-len 131072`.
-
-**Download the weights.** The target (1.5) lives at the root of
-[`tencent/HunyuanOCR`](https://huggingface.co/tencent/HunyuanOCR); the DFlash
-draft is under its [`dflash/`](https://huggingface.co/tencent/HunyuanOCR/tree/main/dflash)
-subfolder, and the previous 1.0 is archived under `v1.0/`.
+### Download the weights
 
 ```bash
 pip install -U "huggingface_hub[cli]"
-
-# target base (1.5) — skip the archived 1.0 to save space
-hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
-
-# DFlash draft — vLLM's --speculative-config does NOT accept an HF subfolder,
-# so download dflash/ into a FLAT local dir and point DFLASH_PATH at it:
-python -c "from huggingface_hub import snapshot_download; import shutil, os; \
-d=snapshot_download('tencent/HunyuanOCR', allow_patterns=['dflash/*']); \
-shutil.copytree(os.path.join(d,'dflash'), './hyocr_dflash', dirs_exist_ok=True)"
+huggingface-cli download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
 ```
 
-**Autoregressive baseline** (HunyuanOCR without DFlash), single GPU:
+The download contains both the base model and the `dflash/` draft model.
+
+### Quick start (vLLM AR, single GPU)
+
+Install per [`inference/vllm_0_18_1/requirements.txt`](inference/vllm_0_18_1/requirements.txt),
+then launch the OpenAI-compatible server (served as `tencent/HunyuanOCR`,
+`-tp 1`, `--max-model-len 131072`):
 
 ```bash
-MODEL_PATH=./HunyuanOCR \
-GPU=0 PORT=8000 GPU_MEM_UTIL=0.9 \
-bash inference/serve_ar.sh
+MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vllm_0_18_1/serve.sh
+curl -sf http://127.0.0.1:8000/v1/models     # readiness check
 ```
 
-**DFlash speculative decoding** (recommended when a DFlash draft is available;
-requires vLLM nightly, see Environment → Option 2):
+Send a single image. The prompt is locked to an official task type via
+`--task-type` (run `--list-tasks` to see all 12); sampling
+(`temperature=0.0`, `top_p=1.0`, `top_k=-1`, `repetition_penalty=1.08`) and
+tail-repetition early-stop / cleanup are built in:
 
 ```bash
-MODEL_PATH=./HunyuanOCR \
-DFLASH_PATH=./hyocr_dflash \
-GPU=0 PORT=8001 GPU_MEM_UTIL=0.9 \
-NUM_SPEC_TOKENS=15 \
-bash inference/serve_dflash.sh
+python inference/vllm_0_18_1/infer_vllm_client.py \
+    --image /path/to/document.png --task-type doc_parse \
+    --model tencent/HunyuanOCR --port 8000 --max-tokens 32768
 ```
 
-Both endpoints expose the standard vLLM OpenAI-compatible routes at
-`http://<host>:<port>/v1/chat/completions`. Wait for readiness with:
+Batch inference over a directory (multi-endpoint concurrency, resumable):
 
 ```bash
-curl -sf http://127.0.0.1:8000/v1/models
-# or
-tail -f vllm_ar_8000.log
+python inference/vllm_0_18_1/batch_infer.py \
+    --image-dir /path/to/images --out-dir /path/to/output \
+    --ports 8000 --task-type doc_parse --max-tokens 32768 --concurrency 16
 ```
 
-**Single-image client** — send one image via the shipped script. It matches the
-sampling params (`temperature=0.0`, `top_p=1.0`, `top_k=-1`,
-`repetition_penalty=1.08`) and streaming tail-repetition early-stop of the
-internal bench pipeline. Prompt selection is locked to a fixed set of official
-task types via `--task-type` (run `--list-tasks` to see them all):
+For **DFlash acceleration**, use [`inference/nightly`](inference/nightly)
+(`serve_dflash.sh`); for **native transformers**, use
+[`inference/transformers`](inference/transformers). Each subfolder README has the
+full environment recipe, the task-type table, and multi-GPU instructions.
 
-```bash
-python inference/infer_vllm_client.py \
-    --host 127.0.0.1 --port 8000 \
-    --model tencent/HunyuanOCR \
-    --image /path/to/document.png \
-    --task-type doc_parse \
-    --max-tokens 32768
-# add --no-stream to disable streaming + early-stop
-# add --no-doc-postprocess to disable doc_parse markdown normalization
-```
-
-Available task types (`--task-type`): `doc_parse` (default), `structured_parse`,
-`spotting_json`, `spotting_hunyuan`, `layout`, `layout_parse`, `chart_parse`,
-`formula`, `table`, `doc_trans_en2zh`, `trans_other2en`, `trans_other2zh`.
-
-For **batch** inference over a directory, use `inference/batch_infer.py` (same
-task types, multi-endpoint concurrency, resumable):
-
-```bash
-python inference/batch_infer.py \
-    --image-dir /path/to/images \
-    --out-dir   /path/to/output \
-    --ports 8000 \
-    --task-type doc_parse \
-    --max-tokens 32768 \
-    --concurrency 16
-```
-
-Or hand-written with the OpenAI SDK (mirrors what `infer_vllm_client.py` does,
-without the streaming early-stop):
-
-```python
-import base64
-from openai import OpenAI
-
-def data_url(p):
-    # Mime is fixed to image/jpeg, matching vllm/infer_vllm_8gpu.py
-    return f"data:image/jpeg;base64,{base64.b64encode(open(p,'rb').read()).decode()}"
-
-client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:8000/v1")
-resp = client.chat.completions.create(
-    model="tencent/HunyuanOCR",
-    messages=[
-        {"role": "system", "content": ""},
-        {"role": "user", "content": [
-            {"type": "image_url", "image_url": {"url": data_url("/path/to/document.png")}},
-            {"type": "text", "text": "请提取图片中的文字内容。"},
-        ]},
-    ],
-    max_tokens=4096,
-    temperature=0.0,
-    top_p=1.0,
-    extra_body={"top_k": -1, "repetition_penalty": 1.08, "skip_special_tokens": True},
-)
-print(resp.choices[0].message.content)
-```
-
-> ⚠️ For **multi-image** requests (>1 image per prompt), an extra vLLM shape-fix
-> patch is required — this is unrelated to single-image OCR. See
-> [`docs/inference.md`](docs/inference.md) if you plan to run multi-image benches.
-
-### C. PC-side deployment via llama.cpp
+### PC-side deployment via llama.cpp
 
 For **CPU / consumer-GPU / laptop** environments, HunyuanOCR-1.5 can also be deployed through
 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) after converting the checkpoint to GGUF.
