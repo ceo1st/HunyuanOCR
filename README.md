@@ -1,14 +1,31 @@
 <div align="center">
 
-[中文阅读](README_zh.md)
+[中文阅读](./README_zh.md)
+
+</div>
+
+<div align="center">
 
 # HunyuanOCR-1.5: Towards Efficient and Effective E2E OCR
 
-🤗 [Model](https://huggingface.co/tencent/HunyuanOCR) | 📄 [Paper](https://arxiv.org/pdf/2607.04884)
-
-📝 Note: For the original HunyuanOCR 1.0 release, please switch to the `main` branch or refer to `README_v1.0.md` / `README_zh_v1.0.md`.
-
 </div>
+
+<p align="center">
+ <img src="./assets/hyocr-1.5-head-img.png" width="90%"/> <br>
+</p>
+
+<p align="center">
+<a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 Model</b></a> |
+<a href="https://arxiv.org/abs/2511.19575"><b>📄 Paper (v1.0)</b></a>
+</p>
+
+> [!NOTE]
+> **The technical report and model weights of HunyuanOCR-1.5 are coming very soon.**
+> This `develop` branch hosts the open-source **training & inference toolkit** for HunyuanOCR-1.5.
+>
+> 👉 Looking for the original **HunyuanOCR 1.0** release? Switch to the
+> [`main`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/main) branch, or read
+> [`README_v1.0.md`](./README_v1.0.md) · [`README_zh_v1.0.md`](./README_zh_v1.0.md).
 
 ---
 
@@ -226,15 +243,19 @@ python inference/infer_dflash.py \
     --num-spec-tokens 15
 ```
 
-The default OCR prompt for document parsing task is:
+The default OCR prompt is:
 
 ```
-提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
+提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，
+表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。
 ```
 
 Override with `--prompt "..."`. Both scripts print load time, generation latency
 and the decoded text.
 
+> ℹ️ `infer_dflash.py` only verifies that the DFlash draft checkpoint loads and
+> produces a matching AR reference on the single image. Real speculative-decoding
+> acceleration is only realized under vLLM (see below).
 
 ### B. vLLM production serving (OpenAI-compatible)
 
@@ -343,7 +364,7 @@ resp = client.chat.completions.create(
             {"type": "text", "text": "请提取图片中的文字内容。"},
         ]},
     ],
-    max_tokens=32768,
+    max_tokens=4096,
     temperature=0.0,
     top_p=1.0,
     extra_body={"top_k": -1, "repetition_penalty": 1.08, "skip_special_tokens": True},
