@@ -26,6 +26,17 @@
 
 ---
 
+## 🔥 News
+- **[2026/07/07]** 🚀 We released **HunyuanOCR-1.5**, a systematic upgrade that makes lightweight end-to-end OCR **faster and better** via DFlash speculative decoding, PC-side llama.cpp deployment, an Agentic Data Flow, and an upgraded training recipe. Check out the [paper](https://arxiv.org/pdf/2607.04884).
+- **[2026/06/02]** 🎉 We have released two new benchmarks. [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR) ([arXiv](https://arxiv.org/abs/2605.11960)), an open-source ancient-text perception benchmark covering the evolutionary trajectory of the "Seven Chinese Scripts", is jointly built by the **SSV Digital Culture Lab** and the **SSV Technical Architecture Department**, together with the **Palace Museum** and **Anyang Normal University**. We have also released [ChartArena](https://github.com/pspdada/ChartArena) ([arXiv](https://arxiv.org/abs/2606.01348)), a new chart-parsing benchmark supporting diverse chart types. Welcome to evaluate and provide your valuable feedback!
+- **[2026/05/11]** 🎉 We have officially open-sourced two benchmarks on document parsing and text-image machine translation: [Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench) and [MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench). Welcome to evaluate and provide your valuable feedback!
+- **[2026/04/08]** 🎉 Our works on document parsing and text-image machine translation have been accepted to the CVPR 2026 Main Conference! Check out the papers: [Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training](https://arxiv.org/abs/2603.23885) and [MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation](https://arxiv.org/abs/2603.23896).
+- **[2026/01/13]** ⭐ We have released a stable official [online demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh), feel free to try it out!
+- **[2025/11/28]** 🛠️ We fixed vLLM inference bugs and hyperparameter configuration issues such as system prompt. It is recommended to use the latest vLLM installation steps and the [inference script](https://github.com/Tencent-Hunyuan/HunyuanOCR/blob/main/Hunyuan-OCR-master/Hunyuan-OCR-vllm/run_hy_ocr.py) for performance testing. Currently, there is still a certain accuracy difference between Transformers and the vLLM framework (we are working on fixing this).
+- **[2025/11/25]** 📝 Inference code and model weights publicly available.
+
+---
+
 ## 📖 Introduction
 
 **HunyuanOCR-1.5** is a lightweight, end-to-end OCR-specialized vision-language model. It targets a
@@ -289,6 +300,59 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
 - [`docs/inference.md`](docs/inference.md) — vLLM install (nightly, DFlash included) and deployment tuning
 - [`docs/llama_cpp.md`](docs/llama_cpp.md) — PC-side deployment with llama.cpp (community & DFlash-adapted fork)
 - [`docs/benchmark.md`](docs/benchmark.md) — end-to-end speed benchmark
+
+---
+
+## 📚 Citation
+```
+@misc{hunyuanvisionteam2026hunyuanocr15,
+      title={HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better},
+      author={Hunyuan Vision Team},
+      year={2026},
+      journal={arXiv preprint arXiv:2607.04884},
+      url={https://arxiv.org/abs/2607.04884},
+}
+
+@misc{hunyuanvisionteam2025hunyuanocrtechnicalreport,
+      title={HunyuanOCR Technical Report}, 
+      author={Hunyuan Vision Team and Pengyuan Lyu and Xingyu Wan and Gengluo Li and Shangpin Peng and Weinong Wang and Liang Wu and Huawen Shen and Yu Zhou and Canhui Tang and Qi Yang and Qiming Peng and Bin Luo and Hower Yang and Xinsong Zhang and Jinnian Zhang and Houwen Peng and Hongming Yang and Senhao Xie and Longsha Zhou and Ge Pei and Binghong Wu and Kan Wu and Jieneng Yang and Bochao Wang and Kai Liu and Jianchen Zhu and Jie Jiang and Linus and Han Hu and Chengquan Zhang},
+      year={2025},
+      journal={arXiv preprint arXiv:2511.19575},
+      url={https://arxiv.org/abs/2511.19575}, 
+}
+
+@misc{li2026mmtitbench,
+      title={MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation},
+      author={Gengluo Li and Chengquan Zhang and Yupu Liang and Huawen Shen and Yaping Zhang and Pengyuan Lyu and Weinong Wang and Xingyu Wan and Gangyan Zeng and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2603.23896},
+      url={https://arxiv.org/abs/2603.23896},
+}
+
+@misc{li2026towardsrealworlddocument,
+      title={Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training},
+      author={Gengluo Li and Pengyuan Lyu and Chengquan Zhang and Huawen Shen and Liang Wu and Xingyu Wan and Gangyan Zeng and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2603.23885},
+      url={https://arxiv.org/abs/2603.23885},
+}
+
+@misc{li2026chronicles,
+      title={Chronicles-OCR: A Cross-Temporal Perception Benchmark for the Evolutionary Trajectory of Chinese Characters},
+      author={Gengluo Li and Shangping Peng and Xingyu Wan and Chengquan Zhang and Hao Feng and Xin Xu and Pian Wu and Bang Li and Zengmao Ding and Yongge Liu and Yipei Ye and Yang Yang and Zhan Shu and Guojun Yan and Zhe Li and Can Ma and Weiping Wang and Yu Zhou and Han Hu},
+      year={2026},
+      journal={arXiv preprint arXiv:2605.11960},
+      url={https://arxiv.org/abs/2605.11960},
+}
+
+@misc{peng2026chartarena,
+      title={ChartArena: Benchmarking Chart Parsing across Languages, Scenarios, and Formats},
+      author={Shangpin Peng and Gengluo Li and Xingyu Wan and Chengquan Zhang and Hao Feng and Binghong Wu and Huawen Shen and Weinong Wang and Ziyi Cai and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2606.01348},
+      url={https://arxiv.org/abs/2606.01348},
+}
+```
 
 ---
 
