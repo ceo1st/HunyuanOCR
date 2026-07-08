@@ -28,6 +28,7 @@
 
 ## 🔥 News
 - **[2026/07/07]** 🚀 We released **HunyuanOCR-1.5**, a systematic upgrade that makes lightweight end-to-end OCR **faster and better** via DFlash speculative decoding, PC-side llama.cpp deployment, an Agentic Data Flow, and an upgraded training recipe. Check out the [paper](https://arxiv.org/pdf/2607.04884).
+- **[2026/06/18]** 🎉 Our work on table parsing has been accepted to the ECCV 2026 Main Conference! Check out the paper: [StrucTab: A Structured Optimization Framework for Table Parsing](https://arxiv.org/abs/2606.29905).
 - **[2026/06/02]** 🎉 We have released two new benchmarks. [Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR) ([arXiv](https://arxiv.org/abs/2605.11960)), an open-source ancient-text perception benchmark covering the evolutionary trajectory of the "Seven Chinese Scripts", is jointly built by the **SSV Digital Culture Lab** and the **SSV Technical Architecture Department**, together with the **Palace Museum** and **Anyang Normal University**. We have also released [ChartArena](https://github.com/pspdada/ChartArena) ([arXiv](https://arxiv.org/abs/2606.01348)), a new chart-parsing benchmark supporting diverse chart types. Welcome to evaluate and provide your valuable feedback!
 - **[2026/05/11]** 🎉 We have officially open-sourced two benchmarks on document parsing and text-image machine translation: [Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench) and [MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench). Welcome to evaluate and provide your valuable feedback!
 - **[2026/04/08]** 🎉 Our works on document parsing and text-image machine translation have been accepted to the CVPR 2026 Main Conference! Check out the papers: [Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training](https://arxiv.org/abs/2603.23885) and [MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation](https://arxiv.org/abs/2603.23896).
@@ -305,9 +306,9 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
 
 ## 📚 Citation
 ```
-@misc{hunyuanvisionteam2026hunyuanocr15,
+@misc{li2026hunyuanocr15,
       title={HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better},
-      author={Hunyuan Vision Team},
+      author={Gengluo Li and Xingyu Wan and Shangpin Peng and Weinong Wang and Hao Feng and Yongkun Du and Binghong Wu and Zheng Ruan and Zhiqiong Lu and Liang Wu and Pengyuan Lyu and Huawen Shen and Zibin Lin and Shijing Hu and Jieneng Yang and Hongbing Wen and Guanghua Yu and Hong Liu and Bochao Wang and Can Ma and Han Hu and Chengquan Zhang and Yu Zhou},
       year={2026},
       journal={arXiv preprint arXiv:2607.04884},
       url={https://arxiv.org/abs/2607.04884},
@@ -351,6 +352,14 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
       year={2026},
       journal={arXiv preprint arXiv:2606.01348},
       url={https://arxiv.org/abs/2606.01348},
+}
+
+@misc{li2026structab,
+      title={StrucTab: A Structured Optimization Framework for Table Parsing},
+      author={Gengluo Li and Shangpin Peng and Chengquan Zhang and Binghong Wu and Hao Feng and Weinong Wang and Pengyuan Lyu and Huawen Shen and Xingyu Wan and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2606.29905},
+      url={https://arxiv.org/abs/2606.29905},
 }
 ```
 

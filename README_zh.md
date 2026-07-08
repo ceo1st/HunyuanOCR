@@ -28,6 +28,7 @@
 
 ## 🔥 最新动态
 - **[2026/07/07]** 🚀 我们发布了 **HunyuanOCR-1.5**，通过 DFlash 投机解码、llama.cpp PC 端部署、Agentic Data Flow 及升级的训练配方，对轻量级端到端 OCR 进行系统性升级，实现**更快、更强**。详见[论文](https://arxiv.org/pdf/2607.04884)。
+- **[2026/06/18]** 🎉 我们在表格解析方向的研究成果被 ECCV 2026 Main Conference 正式接收！详见论文：[StrucTab: A Structured Optimization Framework for Table Parsing](https://arxiv.org/abs/2606.29905)。
 - **[2026/06/02]** 🎉 我们发布了两项全新评测基准。[Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR)（[arXiv](https://arxiv.org/abs/2605.11960)）是涵盖"汉字七体"演变轨迹的古文感知开源评测集，由 **SSV 数字文化实验室**、**SSV 技术架构部**联合**故宫博物院**与**安阳师范学院**共同打造；同时发布 [ChartArena](https://github.com/pspdada/ChartArena)（[arXiv](https://arxiv.org/abs/2606.01348)），支持多种图表类型的图表解析评测基准。欢迎大家评测使用并提出宝贵意见！
 - **[2026/05/11]** 🎉 我们在文档解析（Wild-OmniDocBench）与文本图像机器翻译（MMTIT-Bench）方向的两项 Benchmark 已正式开源：[Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench)、[MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench)，欢迎大家评测使用并提出宝贵意见！
 - **[2026/04/08]** 🎉 我们在文档解析与文本图像机器翻译方向的两项研究成果被CVPR 2026 Main Conference正式接收！详见论文：[2603.23885](https://arxiv.org/abs/2603.23885)、[2603.23896](https://arxiv.org/abs/2603.23896)。
@@ -272,9 +273,9 @@ build/bin/llama-server \
 
 ## 📚 引用
 ```
-@misc{hunyuanvisionteam2026hunyuanocr15,
+@misc{li2026hunyuanocr15,
       title={HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better},
-      author={Hunyuan Vision Team},
+      author={Gengluo Li and Xingyu Wan and Shangpin Peng and Weinong Wang and Hao Feng and Yongkun Du and Binghong Wu and Zheng Ruan and Zhiqiong Lu and Liang Wu and Pengyuan Lyu and Huawen Shen and Zibin Lin and Shijing Hu and Jieneng Yang and Hongbing Wen and Guanghua Yu and Hong Liu and Bochao Wang and Can Ma and Han Hu and Chengquan Zhang and Yu Zhou},
       year={2026},
       journal={arXiv preprint arXiv:2607.04884},
       url={https://arxiv.org/abs/2607.04884},
@@ -318,6 +319,14 @@ build/bin/llama-server \
       year={2026},
       journal={arXiv preprint arXiv:2606.01348},
       url={https://arxiv.org/abs/2606.01348},
+}
+
+@misc{li2026structab,
+      title={StrucTab: A Structured Optimization Framework for Table Parsing},
+      author={Gengluo Li and Shangpin Peng and Chengquan Zhang and Binghong Wu and Hao Feng and Weinong Wang and Pengyuan Lyu and Huawen Shen and Xingyu Wan and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
+      year={2026},
+      journal={arXiv preprint arXiv:2606.29905},
+      url={https://arxiv.org/abs/2606.29905},
 }
 ```
 
