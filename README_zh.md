@@ -27,6 +27,7 @@
 ---
 
 ## 🔥 最新动态
+- **[2026/07/13]** 📊 我们开源了 [**CHAOS-Bench**](./benchmarks/CHAOS-Bench)，一个字符级幻觉评测基准：通过在学术论文图像中注入字符级篡改，检验 OCR VLM 的"所见即所得"能力。
 - **[2026/07/07]** 🚀 我们发布了 **HunyuanOCR-1.5**，通过 DFlash 投机解码、llama.cpp PC 端部署、Agentic Data Flow 及升级的训练配方，对轻量级端到端 OCR 进行系统性升级，实现**更快、更强**。详见[论文](https://arxiv.org/pdf/2607.04884)。
 - **[2026/06/18]** 🎉 我们在表格解析方向的研究成果被 ECCV 2026 Main Conference 正式接收！详见论文：[StrucTab: A Structured Optimization Framework for Table Parsing](https://arxiv.org/abs/2606.29905)。
 - **[2026/06/02]** 🎉 我们发布了两项全新评测基准。[Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR)（[arXiv](https://arxiv.org/abs/2605.11960)）是涵盖"汉字七体"演变轨迹的古文感知开源评测集，由 **SSV 数字文化实验室**、**SSV 技术架构部**联合**故宫博物院**与**安阳师范学院**共同打造；同时发布 [ChartArena](https://github.com/pspdada/ChartArena)（[arXiv](https://arxiv.org/abs/2606.01348)），支持多种图表类型的图表解析评测基准。欢迎大家评测使用并提出宝贵意见！
