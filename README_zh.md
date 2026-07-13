@@ -47,7 +47,7 @@
 - ⚡ **更快 —— DFlash 推理加速。**
   端到端 OCR 通常伴随较长的自回归解码，这在稠密文档、表格、公式等长结构化输出场景中会成为主要瓶颈。HunyuanOCR-1.5 适配了基于 **DFlash** 的投机解码（speculative decoding）框架：一个轻量的块扩散（block-diffusion）草稿模型并行起草多个候选 token，再由目标模型一次性验证。这显著降低了长结构化输出的解码延迟，同时**保持目标模型的输出分布不变**。
 
-- 💻 **PC 端部署（llama.cpp）。**
+- 💻 **PC 端部署（llama.cpp）。** 🔧 *（修复中 —— 精度尚未对齐）*
   除了服务器级的 vLLM，HunyuanOCR-1.5 还支持通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 在 **CPU / 消费级 GPU / 笔记本** 上部署：使用转换后的 GGUF 权重和 OpenAI 兼容的 `llama-server`。同时我们还提供了一个适配 DFlash 的 `llama.cpp` 分支，因此同样的投机解码加速在 PC 端也可用。详见 [`docs/llama_cpp.md`](docs/llama_cpp.md)。
 
 - 🧠 **更强 —— Agentic Data Flow + 升级的训练配方。**
@@ -224,7 +224,11 @@ python inference/vllm_0_18_1/batch_infer.py \
 需要**原生 transformers 推理**请用 [`inference/transformers`](inference/transformers)。
 每套子目录 README 都包含完整的环境安装步骤、任务类型表和多卡说明。
 
-### PC 端部署（llama.cpp）
+### PC 端部署（llama.cpp）🔧（修复中）
+
+> [!WARNING]
+> **修复中。** llama.cpp 路径当前尚未与 vLLM / Transformers 后端精度对齐，输出可能与报告结果存在差异，
+> 目前仅建议用于功能性试用，精度对齐工作正在进行中。
 
 对于 **CPU / 消费级 GPU / 笔记本** 环境，HunyuanOCR-1.5 在将权重转换为 GGUF 后，也可以
 通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 部署。

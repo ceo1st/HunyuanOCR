@@ -57,7 +57,7 @@ the model faster and better**:
  by the target model in a single pass. This significantly reduces the decoding latency of long
  structured outputs while **preserving the output distribution** of the target model.
 
-- 💻 **PC-side deployment via llama.cpp.**
+- 💻 **PC-side deployment via llama.cpp.** 🔧 *(work in progress — accuracy not yet aligned)*
  Beyond server-grade vLLM, HunyuanOCR-1.5 also supports **CPU / consumer-GPU / laptop** deployment
  through [`llama.cpp`](https://github.com/ggml-org/llama.cpp) with a GGUF-converted checkpoint and
  an OpenAI-compatible `llama-server`. A DFlash-adapted `llama.cpp` fork is provided as well, so the
@@ -257,7 +257,12 @@ For **DFlash acceleration**, use [`inference/nightly`](inference/nightly)
 [`inference/transformers`](inference/transformers). Each subfolder README has the
 full environment recipe, the task-type table, and multi-GPU instructions.
 
-### PC-side deployment via llama.cpp
+### PC-side deployment via llama.cpp 🔧 (WIP)
+
+> [!WARNING]
+> **Work in progress.** The llama.cpp path is not yet accuracy-aligned with the vLLM / Transformers
+> backends. Outputs may differ from the reported results; use it for functional trials only while we
+> finish the alignment.
 
 For **CPU / consumer-GPU / laptop** environments, HunyuanOCR-1.5 can also be deployed through
 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) after converting the checkpoint to GGUF.
