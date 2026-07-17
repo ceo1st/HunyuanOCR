@@ -22,7 +22,7 @@
 > [!NOTE]
 > 👉 Looking for the original **HunyuanOCR 1.0** release? Switch to the
 > [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) branch, or read
-> [`README_v1.0.md`](./README_v1.0.md) · [`README_zh_v1.0.md`](./README_zh_v1.0.md).
+> [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
 
 ---
 

@@ -22,7 +22,7 @@
 > [!NOTE]
 > 👉 需要原始的 **HunyuanOCR 1.0** 版本？请切换到
 > [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) 分支，或阅读
-> [`README_v1.0.md`](./README_v1.0.md) · [`README_zh_v1.0.md`](./README_zh_v1.0.md)。
+> [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
 
 ---
 
