@@ -15,6 +15,7 @@ does not support it).
 > are exactly the pitfalls found during that walkthrough — do not skip them.
 
 **AR or DFlash?**
+
 - Outputs match (DFlash is lossless acceleration); sampling is identical and the
   clients are shared verbatim.
 - DFlash speedup grows with output length (significant for long document
@@ -25,6 +26,7 @@ does not support it).
 ---
 
 ## Contents
+
 - [1. Environment setup (important — more involved than Setup A, follow step by step)](#1-environment-setup)
 - [2. Download the weights + draft model](#2-download-the-weights--draft-model)
 - [3. Start the server (single GPU)](#3-start-the-server-single-gpu)
@@ -43,7 +45,7 @@ speculative method is registered only in vLLM nightly (cu130)** — release buil
 > ⚠️ **This section has three mandatory steps (the two in §1.1 plus the compat
 > library in §1.2). Missing any one of them prevents the server from starting.**
 > These pitfalls come from the fact that the nightly build rolls its
-> dependencies daily; each step below explains *why*, so don't skip.
+> dependencies daily; each step below explains _why_, so don't skip.
 
 ### 1.1 Install vLLM nightly (cu130)
 
@@ -280,10 +282,12 @@ Stop the server: `pkill -9 -f "VLLM::EngineCore"; pkill -9 -f "vllm serve"`
 
 ## 4. Inference
 
-> The clients (`infer_vllm_client.py` / `batch_infer.py` / `hunyuan_tasks.py` /
-> `hunyuan_utils.py`) are shared verbatim with Setup A and Setup C — sampling
-> parameters, task prompts, and post-processing are byte-for-byte identical, so
-> AR / DFlash / transformers outputs are comparable.
+> The clients (`infer_vllm_client.py`, `batch_infer.py`) are byte-for-byte
+> identical to Setup A/C, and they import the shared task prompts + output
+> utilities from `../utils/hunyuan_tasks.py` and `../utils/hunyuan_utils.py`
+> (a single copy, no per-setup duplicates). Sampling parameters, task prompts,
+> and post-processing are therefore identical, so AR / DFlash / transformers
+> outputs are directly comparable.
 
 ### Sampling parameters (aligned with the official settings, built in, do not change)
 
@@ -315,20 +319,20 @@ python batch_infer.py --image-dir /path/imgs --out-dir /path/out \
 `--task-type` selects the official recommended prompt. List them all:
 `python infer_vllm_client.py --list-tasks`
 
-| task_type | Description |
-|---|---|
-| `doc_parse` | End-to-end document parsing (default; body → md, tables → HTML, formulas → LaTeX, headers/footers ignored) |
-| `structured_parse` | Structured parsing (ancient text / street view, etc.) |
-| `spotting_json` | Detection + recognition → JSON array (box normalized 0-1000 + text) |
-| `spotting_hunyuan` | Detection + recognition → Hunyuan coordinate format |
-| `layout` | Layout analysis |
-| `layout_parse` | Layout analysis + full-text parsing |
-| `chart_parse` | Chart parsing (flowcharts → Mermaid, others → Markdown) |
-| `formula` | Formula parsing (→ LaTeX) |
-| `table` | Table parsing (→ HTML) |
-| `doc_trans_en2zh` | Document translation, English → Chinese |
-| `trans_other2en` | General-scene translation → English |
-| `trans_other2zh` | General-scene translation → Chinese |
+| task_type          | Description                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `doc_parse`        | End-to-end document parsing (default; body → md, tables → HTML, formulas → LaTeX, headers/footers ignored) |
+| `structured_parse` | Structured parsing (ancient text / street view, etc.)                                                      |
+| `spotting_json`    | Detection + recognition → JSON array (box normalized 0-1000 + text)                                        |
+| `spotting_hunyuan` | Detection + recognition → Hunyuan coordinate format                                                        |
+| `layout`           | Layout analysis                                                                                            |
+| `layout_parse`     | Layout analysis + full-text parsing                                                                        |
+| `chart_parse`      | Chart parsing (flowcharts → Mermaid, others → Markdown)                                                    |
+| `formula`          | Formula parsing (→ LaTeX)                                                                                  |
+| `table`            | Table parsing (→ HTML)                                                                                     |
+| `doc_trans_en2zh`  | Document translation, English → Chinese                                                                    |
+| `trans_other2en`   | General-scene translation → English                                                                        |
+| `trans_other2zh`   | General-scene translation → Chinese                                                                        |
 
 > Markdown normalization (controlled by `--no-doc-postprocess`) applies **only to
 > `doc_parse`**.
@@ -343,12 +347,14 @@ nightly/
 ├── requirements.txt        # nightly/cu130 + CUDA 13 compat install notes + exact validated versions
 ├── serve_ar.sh             # single-GPU vLLM AR launch script
 ├── serve_dflash.sh         # single-GPU vLLM + DFlash launch script (adds --speculative-config over AR)
-├── infer_vllm_client.py    # single-image client  ┐
-├── batch_infer.py          # batch inference        ├─ shared with Setup A/C; outputs comparable
-├── hunyuan_tasks.py        # task_type → prompt     │
-├── hunyuan_utils.py        # output utils (early-stop/cleanup + doc_parse normalization) ┘
+├── infer_vllm_client.py    # single-image client   ┐ shared logic with Setup A/C;
+├── batch_infer.py          # batch inference       ┘ outputs comparable
 └── hyocr_dflash/           # DFlash draft: config + dflash.py + tokenizer (model.safetensors downloaded from HF, see §2)
 ```
+
+> Shared helpers (`hunyuan_tasks.py` = task_type → prompt, `hunyuan_utils.py` =
+> output utils incl. doc_parse normalization) live in a single copy at
+> `../utils/` and are imported by all three setups (A/B/C).
 
 > The `vision_config.max_image_size` in `config.json` is the positional-encoding
 > table shape (a model-structure parameter) and **must not** be treated as a

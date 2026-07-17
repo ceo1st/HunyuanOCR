@@ -4,11 +4,11 @@ HunyuanOCR-1.5 provides three self-contained inference setups under
 [`../inference`](../inference). Each has its own README with the full,
 validated environment recipe and usage — start there:
 
-| Setup | vLLM | DFlash | transformers | CUDA | Guide |
-|---|:-:|:-:|:-:|---|---|
-| [`inference/vllm_0_18_1`](../inference/vllm_0_18_1) | 0.18.1 (release) | ❌ | ❌ | 12.x | [README](../inference/vllm_0_18_1/README.md) |
-| [`inference/nightly`](../inference/nightly) | nightly | ✅ | ❌ | 13 | [README](../inference/nightly/README.md) |
-| [`inference/transformers`](../inference/transformers) | — | — | ✅ 5.13.0 | host driver | [README](../inference/transformers/README.md) |
+| Setup                                                 |       vLLM       | DFlash | transformers | CUDA        | Guide                                         |
+| ----------------------------------------------------- | :--------------: | :----: | :----------: | ----------- | --------------------------------------------- |
+| [`inference/vllm_0_18_1`](../inference/vllm_0_18_1)   | 0.18.1 (release) |   ❌   |      ❌      | 12.x        | [README](../inference/vllm_0_18_1/README.md)  |
+| [`inference/nightly`](../inference/nightly)           |     nightly      |   ✅   |      ❌      | 13          | [README](../inference/nightly/README.md)      |
+| [`inference/transformers`](../inference/transformers) |        —         |   —    |  ✅ 5.13.0   | host driver | [README](../inference/transformers/README.md) |
 
 > ⚠️ These are **mutually exclusive environments**: vLLM (AR / DFlash) and native
 > transformers inference require incompatible `transformers` versions and cannot
@@ -24,13 +24,13 @@ notes** on top of those setups.
 Key server arguments (set in the `serve*.sh` scripts; override via the documented
 environment variables):
 
-| Arg | Recommended | Notes |
-|---|---|---|
-| `--gpu-memory-utilization` | `0.85` | Leave headroom for CUDA graph capture; DFlash's draft adds ~0.7 GB |
-| `--max-model-len` | `131072` | Context window; lower it to save memory if your inputs are short |
-| `--max-num-batched-tokens` | `131072` | Higher = better throughput, more memory |
-| `--limit-mm-per-prompt` | `{"image":4,"video":0}` | Image-only model; video disabled |
-| `--trust-remote-code` | ✓ | Required to load the HunyuanOCR model code |
+| Arg                        | Recommended             | Notes                                                              |
+| -------------------------- | ----------------------- | ------------------------------------------------------------------ |
+| `--gpu-memory-utilization` | `0.85`                  | Leave headroom for CUDA graph capture; DFlash's draft adds ~0.7 GB |
+| `--max-model-len`          | `131072`                | Context window; lower it to save memory if your inputs are short   |
+| `--max-num-batched-tokens` | `131072`                | Higher = better throughput, more memory                            |
+| `--limit-mm-per-prompt`    | `{"image":4,"video":0}` | Image-only model; video disabled                                   |
+| `--trust-remote-code`      | ✓                       | Required to load the HunyuanOCR model code                         |
 
 **Multi-GPU throughput.** vLLM here uses `-tp 1` (one replica per GPU). For
 higher throughput, launch one instance per GPU on separate ports
@@ -46,9 +46,9 @@ DFlash speculative decoding is lossless (it preserves the target model's output
 distribution) and accelerates long structured outputs the most. The single knob
 is `NUM_SPEC_TOKENS` (default 15, the official recommendation):
 
-| `NUM_SPEC_TOKENS` | Effect |
-|---|---|
-| larger (e.g. 15) | higher potential speedup, more per-step overhead |
+| `NUM_SPEC_TOKENS`   | Effect                                                         |
+| ------------------- | -------------------------------------------------------------- |
+| larger (e.g. 15)    | higher potential speedup, more per-step overhead               |
 | smaller (e.g. 8–10) | less overhead; can win 5–10% when late positions rarely accept |
 
 Inspect per-position acceptance in the server log to decide:

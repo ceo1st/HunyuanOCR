@@ -7,10 +7,10 @@ HunyuanOCR-1.5 can be deployed on **CPU / consumer GPU / laptop** via
 
 Two versions are supported:
 
-| Version | Repo | Use when |
-|:--|:--|:--|
-| **Community (no DFlash)** | Upstream `ggml-org/llama.cpp` (main branch) | You only need HunyuanOCR base — simplest, most stable. |
-| **DFlash-adapted** | Fork [`wendadawen/llama.cpp @ dflash-adapt-hunyuanocr-hunyuanstyle`](https://github.com/wendadawen/llama.cpp/tree/dflash-adapt-hunyuanocr-hunyuanstyle) | You want end-to-end acceleration with DFlash speculative decoding on PC. |
+| Version                   | Repo                                                                                                                                                    | Use when                                                                 |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------- |
+| **Community (no DFlash)** | Upstream `ggml-org/llama.cpp` (main branch)                                                                                                             | You only need HunyuanOCR base — simplest, most stable.                   |
+| **DFlash-adapted**        | Fork [`wendadawen/llama.cpp @ dflash-adapt-hunyuanocr-hunyuanstyle`](https://github.com/wendadawen/llama.cpp/tree/dflash-adapt-hunyuanocr-hunyuanstyle) | You want end-to-end acceleration with DFlash speculative decoding on PC. |
 
 > ⚠️ Speculative decoding support in upstream `llama.cpp` is limited, DFlash has
 > **not** been merged, and there are still known bugs. The fork above is our
@@ -119,12 +119,12 @@ build/bin/llama-server \
 
 Key DFlash-specific flags:
 
-| Flag | Meaning |
-|:--|:--|
-| `--model-draft <path>` | GGUF path of the DFlash draft model |
-| `--dflash` | Enable DFlash-style speculative decoding |
-| `--draft-max 16` | Number of draft tokens per speculative step (K) |
-| `--parallel 1` | Single serial slot (recommended for DFlash on PC) |
+| Flag                                | Meaning                                                     |
+| :---------------------------------- | :---------------------------------------------------------- |
+| `--model-draft <path>`              | GGUF path of the DFlash draft model                         |
+| `--dflash`                          | Enable DFlash-style speculative decoding                    |
+| `--draft-max 16`                    | Number of draft tokens per speculative step (K)             |
+| `--parallel 1`                      | Single serial slot (recommended for DFlash on PC)           |
 | `--ubatch-size / --batch-size 8192` | Large batch to keep the target model well fed during verify |
 
 ---

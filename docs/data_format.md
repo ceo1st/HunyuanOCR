@@ -14,20 +14,23 @@ Each line in a raw JSONL file is one training sample:
 
 ```json
 {
-    "image_path": ["/absolute/path/to/image.png"],
-    "conversations": [
-        {"from": "human",  "value": "<image>\n提取文档图片中正文的所有信息用markdown格式表示..."},
-        {"from": "gpt",    "value": "# Title\n\nBody text ..."}
-    ]
+  "image_path": ["/absolute/path/to/image.png"],
+  "conversations": [
+    {
+      "from": "human",
+      "value": "<image>\n提取文档图片中正文的所有信息用markdown格式表示..."
+    },
+    { "from": "gpt", "value": "# Title\n\nBody text ..." }
+  ]
 }
 ```
 
 **Fields:**
 
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `image_path` | `list[str]` | ✅ | Absolute paths. Usually 1 image; multi-image supported. |
-| `conversations` | `list[dict]` | ✅ | Alternating `human` / `gpt` turns. `<image>` placeholder in `human` value indicates image insertion point. |
+| Field           | Type         | Required | Notes                                                                                                      |
+| --------------- | ------------ | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `image_path`    | `list[str]`  | ✅       | Absolute paths. Usually 1 image; multi-image supported.                                                    |
+| `conversations` | `list[dict]` | ✅       | Alternating `human` / `gpt` turns. `<image>` placeholder in `human` value indicates image insertion point. |
 
 ## 2. Packing Pipeline
 
@@ -58,16 +61,16 @@ PACK_OUTPUT=./data/parsing_packed_20480.jsonl \
 
 ### Tunable parameters (env vars)
 
-| Env var | Default | Description |
-|---|---:|---|
-| `MODEL_PATH` | *(required)* | HunyuanOCR base model dir (for tokenizer + processor) |
-| `INPUT_LIST` | `./configs/data_list.txt` | Path to file listing raw JSONLs |
-| `COUNT_OUTPUT_DIR` | `./data/parsing_jsonl_count` | Temp dir for count-phase output |
-| `PACK_OUTPUT` | `./data/parsing_packed_{PACK_LEN}.jsonl` | Final packed JSONL |
-| `PACK_LEN` | `20480` | Max sequence length per packed line |
-| `NUM_PROCESSES` | `32` | Multiprocess count workers |
-| `THREADS_PER_PROCESS` | `8` | Threads per count worker |
-| `LOG_FILE` | `pack_data.log` | Progress log path |
+| Env var               |                                  Default | Description                                           |
+| --------------------- | ---------------------------------------: | ----------------------------------------------------- |
+| `MODEL_PATH`          |                             _(required)_ | HunyuanOCR base model dir (for tokenizer + processor) |
+| `INPUT_LIST`          |                `./configs/data_list.txt` | Path to file listing raw JSONLs                       |
+| `COUNT_OUTPUT_DIR`    |             `./data/parsing_jsonl_count` | Temp dir for count-phase output                       |
+| `PACK_OUTPUT`         | `./data/parsing_packed_{PACK_LEN}.jsonl` | Final packed JSONL                                    |
+| `PACK_LEN`            |                                  `20480` | Max sequence length per packed line                   |
+| `NUM_PROCESSES`       |                                     `32` | Multiprocess count workers                            |
+| `THREADS_PER_PROCESS` |                                      `8` | Threads per count worker                              |
+| `LOG_FILE`            |                          `pack_data.log` | Progress log path                                     |
 
 ### Output schema (packed JSONL)
 
@@ -120,6 +123,7 @@ with open('./data/parsing_packed_20480.jsonl') as f:
 ```
 
 You should see something like:
+
 ```
 pack 0: 7 samples, 20438 tokens
 pack 1: 5 samples, 19821 tokens

@@ -280,16 +280,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# python tools/pack_from_counted.py \
-#     --input-dir /apdcephfs/private_yongkundu/data/output_jsonl_count_std \
-#     --pack-output ./data/all_packed_std.jsonl \
-#     --pack-length 20480 \
-#     --batch-size 1024 \
-#     --seed 42
-# python tools/pack_from_counted.py \
-#     --input-dir /apdcephfs/private_yongkundu/data/all_parsing_jsonl_std \
-#     --pack-output ./data/all_parsing_packed_std.jsonl \
-#     --pack-length 20480 \
-#     --batch-size 1024 \
-#     --seed 42

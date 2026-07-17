@@ -11,12 +11,13 @@
 
 The core comparison — same base model, different inference paths:
 
-| Config | wall time | avg latency | page/s | speedup |
-|---|---:|---:|---:|---:|
-| **HunyuanOCR base (AR)** | 2821.9 s | 3.032 s | 0.330 | 1.00× |
+| Config                                          |    wall time | avg latency |    page/s |   speedup |
+| ----------------------------------------------- | -----------: | ----------: | --------: | --------: |
+| **HunyuanOCR base (AR)**                        |     2821.9 s |     3.032 s |     0.330 |     1.00× |
 | **HunyuanOCR + DFlash (14.7k packs, finetune)** | **1316.5 s** | **1.408 s** | **0.706** | **2.14×** |
 
 **Key results:**
+
 - DFlash achieves **2.14× end-to-end speedup** vs AR baseline
 - Speculative decoding is essentially lossless: total-tokens difference < 0.15% vs AR
 
@@ -24,15 +25,15 @@ The core comparison — same base model, different inference paths:
 
 Comparison with other open-source OCR VLMs, all under identical eval conditions (c=1, `max_tokens=8000`):
 
-| Rank | Model | Latency (s/img) | Page/s | vs HunyuanOCR AR | Notes |
-|:---:|---|---:|---:|---:|---|
-| 🥇 | **HunyuanOCR + DFlash** | **1.41** | **0.706** | **2.14×** | Speculative decoding |
-| 🥈 | GLM-OCR (SDK page pipeline) | 1.65 | 0.604 | 1.83× | Layout + region OCR concurrent |
-| 🥉 | PaddleOCR-VL 1.6 (0.9B) | 1.74 | 0.562 | 1.71× | 0.9B small model + two-stage |
-| 4 |  HunyuanOCR base (AR) | 3.03 | 0.330 | 1.00× | Baseline |
-| 5 | Unlimited-OCR (SGLang) | 3.66 | 0.255 | 0.77× | image tiling (gundam mode) |
-| 6 | DeepSeek-OCR-2 | 5.46 | 0.179 | 0.54× | Large model + grounding |
-| 7 | dots.ocr | 7.15 | 0.136 | 0.41× | Slow but structured |
+| Rank | Model                       | Latency (s/img) |    Page/s | vs HunyuanOCR AR | Notes                          |
+| :--: | --------------------------- | --------------: | --------: | ---------------: | ------------------------------ |
+|  🥇  | **HunyuanOCR + DFlash**     |        **1.41** | **0.706** |        **2.14×** | Speculative decoding           |
+|  🥈  | GLM-OCR (SDK page pipeline) |            1.65 |     0.604 |            1.83× | Layout + region OCR concurrent |
+|  🥉  | PaddleOCR-VL 1.6 (0.9B)     |            1.74 |     0.562 |            1.71× | 0.9B small model + two-stage   |
+|  4   | HunyuanOCR base (AR)        |            3.03 |     0.330 |            1.00× | Baseline                       |
+|  5   | Unlimited-OCR (SGLang)      |            3.66 |     0.255 |            0.77× | image tiling (gundam mode)     |
+|  6   | DeepSeek-OCR-2              |            5.46 |     0.179 |            0.54× | Large model + grounding        |
+|  7   | dots.ocr                    |            7.15 |     0.136 |            0.41× | Slow but structured            |
 
 ## Reproducing These Numbers
 

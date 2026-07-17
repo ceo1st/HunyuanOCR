@@ -12,6 +12,7 @@ for native transformers inference use [`../transformers`](../transformers).
 ---
 
 ## Contents
+
 - [1. Environment setup](#1-environment-setup)
 - [2. Download the weights](#2-download-the-weights)
 - [3. Start the server (single GPU)](#3-start-the-server-single-gpu)
@@ -139,20 +140,20 @@ python batch_infer.py --image-dir /path/imgs --out-dir /path/out \
 `--task-type` selects the official recommended prompt. List them all:
 `python infer_vllm_client.py --list-tasks`
 
-| task_type | Description |
-|---|---|
-| `doc_parse` | End-to-end document parsing (default; body → md, tables → HTML, formulas → LaTeX, headers/footers ignored) |
-| `structured_parse` | Structured parsing (non-document scenes such as ancient text / street view) |
-| `spotting_json` | Detection + recognition → JSON array (box normalized 0-1000 + text) |
-| `spotting_hunyuan` | Detection + recognition → Hunyuan coordinate format |
-| `layout` | Layout analysis (in reading order) |
-| `layout_parse` | Layout analysis + full-text parsing |
-| `chart_parse` | Chart parsing (flowcharts → Mermaid, others → Markdown) |
-| `formula` | Formula parsing (→ LaTeX) |
-| `table` | Table parsing (→ HTML) |
-| `doc_trans_en2zh` | Document translation, English → Chinese |
-| `trans_other2en` | General-scene translation → English |
-| `trans_other2zh` | General-scene translation → Chinese |
+| task_type          | Description                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `doc_parse`        | End-to-end document parsing (default; body → md, tables → HTML, formulas → LaTeX, headers/footers ignored) |
+| `structured_parse` | Structured parsing (non-document scenes such as ancient text / street view)                                |
+| `spotting_json`    | Detection + recognition → JSON array (box normalized 0-1000 + text)                                        |
+| `spotting_hunyuan` | Detection + recognition → Hunyuan coordinate format                                                        |
+| `layout`           | Layout analysis (in reading order)                                                                         |
+| `layout_parse`     | Layout analysis + full-text parsing                                                                        |
+| `chart_parse`      | Chart parsing (flowcharts → Mermaid, others → Markdown)                                                    |
+| `formula`          | Formula parsing (→ LaTeX)                                                                                  |
+| `table`            | Table parsing (→ HTML)                                                                                     |
+| `doc_trans_en2zh`  | Document translation, English → Chinese                                                                    |
+| `trans_other2en`   | General-scene translation → English                                                                        |
+| `trans_other2zh`   | General-scene translation → Chinese                                                                        |
 
 > Markdown normalization (controlled by `--no-doc-postprocess`) applies **only to
 > `doc_parse`**.
@@ -168,10 +169,13 @@ vllm_0_18_1/
 ├── requirements-lock.txt   # dependencies (fully pinned, 100% reproducible)
 ├── serve.sh                # single-GPU vLLM launch script (AR)
 ├── infer_vllm_client.py    # single-image client (task_type + post-processing)
-├── batch_infer.py          # batch inference (multi-endpoint concurrency)
-├── hunyuan_tasks.py        # task_type → official prompt mapping
-└── hunyuan_utils.py        # output utils: streaming early-stop / cleanup + doc_parse markdown normalization
+└── batch_infer.py          # batch inference (multi-endpoint concurrency)
 ```
+
+> Shared helpers (`hunyuan_tasks.py` = task_type → official prompt mapping,
+> `hunyuan_utils.py` = streaming early-stop / cleanup + doc_parse markdown
+> normalization) live in a single copy at `../utils/` and are imported by every
+> inference entry point (`vllm_0_18_1/`, `nightly/`, `transformers/`).
 
 > Image resolution uses the model default (`max_pixels ≈ 4096×4096`); no
 > configuration needed. The `vision_config.max_image_size` in `config.json` is

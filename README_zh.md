@@ -16,7 +16,7 @@
 
 <p align="center">
 <a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 模型</b></a> |
-<a href="https://arxiv.org/pdf/2607.04884"><b>📄 技术报告</b></a>
+<a href="https://arxiv.org/pdf/2607.04884"><b>📄 论文</b></a>
 </p>
 
 > [!NOTE]
@@ -27,15 +27,22 @@
 ---
 
 ## 🔥 最新动态
+
 - **[2026/07/13]** 📊 我们开源了 [**CHAOS-Bench**](./benchmarks/CHAOS-Bench)，一个字符级幻觉评测基准：通过在学术论文图像中注入字符级篡改，检验 OCR VLM 的"所见即所得"能力。
-- **[2026/07/07]** 🚀 我们发布了 **HunyuanOCR-1.5**，通过 DFlash 投机解码、llama.cpp PC 端部署、Agentic Data Flow 及升级的训练配方，对轻量级端到端 OCR 进行系统性升级，实现**更快、更强**。详见[论文](https://arxiv.org/pdf/2607.04884)。
+- **[2026/07/07]** 🚀 我们发布 **HunyuanOCR-1.5**，通过 DFlash 投机解码、llama.cpp PC 端部署、Agentic Data Flow 及优化后的训练配方，对轻量级端到端 OCR 进行系统性升级，实现**更快、更强**。详见[论文](https://arxiv.org/pdf/2607.04884)。
 - **[2026/06/18]** 🎉 我们在表格解析方向的研究成果被 ECCV 2026 Main Conference 正式接收！详见论文：[StrucTab: A Structured Optimization Framework for Table Parsing](https://arxiv.org/abs/2606.29905)。
 - **[2026/06/02]** 🎉 我们发布了两项全新评测基准。[Chronicles-OCR](https://github.com/VirtualLUOUCAS/Chronicles-OCR)（[arXiv](https://arxiv.org/abs/2605.11960)）是涵盖"汉字七体"演变轨迹的古文感知开源评测集，由 **SSV 数字文化实验室**、**SSV 技术架构部**联合**故宫博物院**与**安阳师范学院**共同打造；同时发布 [ChartArena](https://github.com/pspdada/ChartArena)（[arXiv](https://arxiv.org/abs/2606.01348)），支持多种图表类型的图表解析评测基准。欢迎大家评测使用并提出宝贵意见！
-- **[2026/05/11]** 🎉 我们在文档解析（Wild-OmniDocBench）与文本图像机器翻译（MMTIT-Bench）方向的两项 Benchmark 已正式开源：[Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench)、[MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench)，欢迎大家评测使用并提出宝贵意见！
-- **[2026/04/08]** 🎉 我们在文档解析与文本图像机器翻译方向的两项研究成果被CVPR 2026 Main Conference正式接收！详见论文：[2603.23885](https://arxiv.org/abs/2603.23885)、[2603.23896](https://arxiv.org/abs/2603.23896)。
-- **[2026/01/13]** ⭐ 我们发布了稳定的官方[在线Demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh)页面, 欢迎试用！
-- **[2025/11/28]** 🛠️ 我们修复了vLLM推理bug以及system prompt等超参配置问题。建议使用最新的vLLM安装步骤和[推理脚本](https://github.com/Tencent-Hunyuan/HunyuanOCR/blob/main/Hunyuan-OCR-master/Hunyuan-OCR-vllm/run_hy_ocr.py)进行效果测试。目前Transformers相比vLLM框架仍然存在一定的精度差异（正在努力修复中）。
+- **[2026/05/11]** 🎉 我们在文档解析（[Wild-OmniDocBench](https://github.com/VirtualLUOUCAS/Wild_OmniDocBench)）与文本图像机器翻译（[MMTIT-Bench](https://github.com/VirtualLUOUCAS/MMTIT_Bench)）方向的两项 Benchmark 已正式开源，欢迎大家评测使用并提出宝贵意见！
+- **[2026/04/08]** 🎉 我们在文档解析与文本图像机器翻译方向的两项研究成果被 CVPR 2026 Main Conference 正式接收！详见论文：[2603.23885](https://arxiv.org/abs/2603.23885)、[2603.23896](https://arxiv.org/abs/2603.23896)。
+
+<details>
+<summary>📜 历史归档动态（HunyuanOCR 1.0）</summary>
+
+- **[2026/01/13]** ⭐ 我们发布了稳定的官方[在线 Demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh) 页面, 欢迎试用！
+- **[2025/11/28]** 🛠️ 我们修复了 vLLM 推理 bug 以及 system prompt 等超参配置问题。建议使用最新的 vLLM 安装步骤和[推理脚本](https://github.com/Tencent-Hunyuan/HunyuanOCR/blob/main/Hunyuan-OCR-master/Hunyuan-OCR-vllm/run_hy_ocr.py)进行效果测试。目前 Transformers 相比 vLLM 框架仍然存在一定的精度差异（正在努力修复中）。
 - **[2025/11/25]** 📝 推理代码和模型权重已开源。
+
+</details>
 
 ---
 
@@ -48,7 +55,7 @@
 - ⚡ **更快 —— DFlash 推理加速。**
   端到端 OCR 通常伴随较长的自回归解码，这在稠密文档、表格、公式等长结构化输出场景中会成为主要瓶颈。HunyuanOCR-1.5 适配了基于 **DFlash** 的投机解码（speculative decoding）框架：一个轻量的块扩散（block-diffusion）草稿模型并行起草多个候选 token，再由目标模型一次性验证。这显著降低了长结构化输出的解码延迟，同时**保持目标模型的输出分布不变**。
 
-- 💻 **PC 端部署（llama.cpp）。** 🔧 *（修复中 —— 精度尚未对齐）*
+- 💻 **PC 端部署（llama.cpp）。** 🔧
   除了服务器级的 vLLM，HunyuanOCR-1.5 还支持通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 在 **CPU / 消费级 GPU / 笔记本** 上部署：使用转换后的 GGUF 权重和 OpenAI 兼容的 `llama-server`。同时我们还提供了一个适配 DFlash 的 `llama.cpp` 分支，因此同样的投机解码加速在 PC 端也可用。详见 [`docs/llama_cpp.md`](docs/llama_cpp.md)。
 
 - 🧠 **更强 —— Agentic Data Flow + 升级的训练配方。**
@@ -80,11 +87,11 @@ pip install flash-attn --no-build-isolation
 与原生 transformers 推理需要**不兼容的 `transformers` 版本，无法共存于同一环境**——
 这是实测验证的硬约束，而非偏好：
 
-| 方案 | vLLM | DFlash 加速 | transformers | CUDA | 适用 |
-|---|:-:|:-:|:-:|---|---|
-| [`inference/vllm_0_18_1`](inference/vllm_0_18_1) | 0.18.1（正式版） | ❌ | ❌ | 12.x | 最省心，仅 AR |
-| [`inference/nightly`](inference/nightly) | nightly | ✅ | ❌ | 13 | AR + DFlash 加速 |
-| [`inference/transformers`](inference/transformers) | — | — | ✅ 5.13.0 | 匹配宿主驱动 | 原生 HF 推理 |
+| 方案                                               |       vLLM       | DFlash 加速 | transformers | CUDA         | 适用             |
+| -------------------------------------------------- | :--------------: | :---------: | :----------: | ------------ | ---------------- |
+| [`inference/vllm_0_18_1`](inference/vllm_0_18_1)   | 0.18.1（正式版） |     ❌      |      ❌      | 12.x         | 最省心，仅 AR    |
+| [`inference/nightly`](inference/nightly)           |     nightly      |     ✅      |      ❌      | 13           | AR + DFlash 加速 |
+| [`inference/transformers`](inference/transformers) |        —         |      —      |  ✅ 5.13.0   | 匹配宿主驱动 | 原生 HF 推理     |
 
 每套子目录各自附带独立的 README 和 `requirements.txt`。选型指南与完整原因见
 [`inference/README.md`](inference/README.md)，性能调优见 [`docs/inference.md`](docs/inference.md)。
@@ -225,11 +232,7 @@ python inference/vllm_0_18_1/batch_infer.py \
 需要**原生 transformers 推理**请用 [`inference/transformers`](inference/transformers)。
 每套子目录 README 都包含完整的环境安装步骤、任务类型表和多卡说明。
 
-### PC 端部署（llama.cpp）🔧（修复中）
-
-> [!WARNING]
-> **修复中。** llama.cpp 路径当前尚未与 vLLM / Transformers 后端精度对齐，输出可能与报告结果存在差异，
-> 目前仅建议用于功能性试用，精度对齐工作正在进行中。
+### PC 端部署（llama.cpp）
 
 对于 **CPU / 消费级 GPU / 笔记本** 环境，HunyuanOCR-1.5 在将权重转换为 GGUF 后，也可以
 通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 部署。
@@ -258,7 +261,7 @@ build/bin/llama-server \
     --ctx-size 10240 --n-predict 4096
 ```
 
-适配 DFlash 的变体、草稿模型的权重转换，以及一个冒烟测试客户端
+适配 DFlash 的变体、草稿模型的权重转换，以及一个测试客户端
 （[`llama_cpp/chat.py`](llama_cpp/chat.py)，附带 [`llama_cpp/test_assets/`](llama_cpp/test_assets)
 下的 26 张示例 OCR 图片）：
 
@@ -277,61 +280,56 @@ build/bin/llama-server \
 ---
 
 ## 📚 引用
-```
-@misc{li2026hunyuanocr15,
-      title={HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better},
-      author={Gengluo Li and Xingyu Wan and Shangpin Peng and Weinong Wang and Hao Feng and Yongkun Du and Binghong Wu and Zheng Ruan and Zhiqiong Lu and Liang Wu and Pengyuan Lyu and Huawen Shen and Zibin Lin and Shijing Hu and Jieneng Yang and Hongbing Wen and Guanghua Yu and Hong Liu and Bochao Wang and Can Ma and Han Hu and Chengquan Zhang and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2607.04884},
-      url={https://arxiv.org/abs/2607.04884},
+
+```bibtex
+@article{HunyuanOCR_1_5_2026,
+  title   = {{HunyuanOCR-1.5}: Making Lightweight {OCR} {VLMs} Faster and Better},
+  author  = {Li, Gengluo and Wan, Xingyu and Peng, Shangpin and Wang, Weinong and Feng, Hao and Du, Yongkun and Wu, Binghong and Ruan, Zheng and Lu, Zhiqiong and Wu, Liang and Lyu, Pengyuan and Shen, Huawen and Lin, Zibin and Hu, Shijing and Yang, Jieneng and Wen, Hongbing and Yu, Guanghua and Liu, Hong and Wang, Bochao and Ma, Can and Hu, Han and Zhang, Chengquan and Zhou, Yu},
+  journal = {arXiv preprint arXiv:2607.04884},
+  year    = {2026}
 }
 
-@misc{hunyuanvisionteam2025hunyuanocrtechnicalreport,
-      title={HunyuanOCR Technical Report}, 
-      author={Hunyuan Vision Team and Pengyuan Lyu and Xingyu Wan and Gengluo Li and Shangpin Peng and Weinong Wang and Liang Wu and Huawen Shen and Yu Zhou and Canhui Tang and Qi Yang and Qiming Peng and Bin Luo and Hower Yang and Xinsong Zhang and Jinnian Zhang and Houwen Peng and Hongming Yang and Senhao Xie and Longsha Zhou and Ge Pei and Binghong Wu and Kan Wu and Jieneng Yang and Bochao Wang and Kai Liu and Jianchen Zhu and Jie Jiang and Linus and Han Hu and Chengquan Zhang},
-      year={2025},
-      journal={arXiv preprint arXiv:2511.19575},
-      url={https://arxiv.org/abs/2511.19575}, 
+@article{HunyuanOCR_2025,
+  title   = {{HunyuanOCR Technical Report}},
+  author  = {Team, Hunyuan Vision and Lyu, Pengyuan and Wan, Xingyu and Li, Gengluo and Peng, Shangpin and Wang, Weinong and Wu, Liang and Shen, Huawen and Zhou, Yu and Tang, Canhui and Yang, Qi and Peng, Qiming and Luo, Bin and Yang, Hower and Zhang, Xinsong and Zhang, Jinnian and Peng, Houwen and Yang, Hongming and Xie, Senhao and Zhou, Longsha and Pei, Ge and Wu, Binghong and Yan, Rui and Wu, Kan and Yang, Jieneng and Wang, Bochao and Liu, Kai and Zhu, Jianchen and Jiang, Jie and Linus and Hu, Han and Zhang, Chengquan},
+  journal = {arXiv preprint arXiv:2511.19575},
+  year    = {2025}
 }
 
-@misc{li2026mmtitbench,
-      title={MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation},
-      author={Gengluo Li and Chengquan Zhang and Yupu Liang and Huawen Shen and Yaping Zhang and Pengyuan Lyu and Weinong Wang and Xingyu Wan and Gangyan Zeng and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2603.23896},
-      url={https://arxiv.org/abs/2603.23896},
+@inproceedings{MMTIT_Bench_2026,
+  title     = {{MMTIT-Bench}: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation},
+  author    = {Li, Gengluo and Zhang, Chengquan and Liang, Yupu and Shen, Huawen and Zhang, Yaping and Lyu, Pengyuan and Wang, Weinong and Wan, Xingyu and Zeng, Gangyan and Hu, Han and others},
+  booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages     = {16593--16602},
+  year      = {2026}
 }
 
-@misc{li2026towardsrealworlddocument,
-      title={Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training},
-      author={Gengluo Li and Pengyuan Lyu and Chengquan Zhang and Huawen Shen and Liang Wu and Xingyu Wan and Gangyan Zeng and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2603.23885},
-      url={https://arxiv.org/abs/2603.23885},
+@article{li2026towardsrealworlddocument,
+  title   = {Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training},
+  author  = {Li, Gengluo and Lyu, Pengyuan and Zhang, Chengquan and Shen, Huawen and Wu, Liang and Wan, Xingyu and Zeng, Gangyan and Hu, Han and Ma, Can and Zhou, Yu},
+  journal = {arXiv preprint arXiv:2603.23885},
+  year    = {2026}
 }
 
-@misc{li2026chronicles,
-      title={Chronicles-OCR: A Cross-Temporal Perception Benchmark for the Evolutionary Trajectory of Chinese Characters},
-      author={Gengluo Li and Shangping Peng and Xingyu Wan and Chengquan Zhang and Hao Feng and Xin Xu and Pian Wu and Bang Li and Zengmao Ding and Yongge Liu and Yipei Ye and Yang Yang and Zhan Shu and Guojun Yan and Zhe Li and Can Ma and Weiping Wang and Yu Zhou and Han Hu},
-      year={2026},
-      journal={arXiv preprint arXiv:2605.11960},
-      url={https://arxiv.org/abs/2605.11960},
+@article{Chronicles_OCR_2026,
+  title   = {{Chronicles-OCR}: A Cross-Temporal Perception Benchmark for the Evolutionary Trajectory of Chinese Characters},
+  author  = {Li, Gengluo and Peng, Shangpin and Wan, Xingyu and Zhang, Chengquan and Feng, Hao and Xu, Xin and Wu, Pian and Li, Bang and Ding, Zengmao and Liu, Yongge and others},
+  journal = {arXiv preprint arXiv:2605.11960},
+  year    = {2026}
 }
 
-@misc{peng2026chartarena,
-      title={ChartArena: Benchmarking Chart Parsing across Languages, Scenarios, and Formats},
-      author={Shangpin Peng and Gengluo Li and Xingyu Wan and Chengquan Zhang and Hao Feng and Binghong Wu and Huawen Shen and Weinong Wang and Ziyi Cai and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2606.01348},
-      url={https://arxiv.org/abs/2606.01348},
+@article{ChartArena_2026,
+  title   = {{ChartArena}: Benchmarking Chart Parsing across Languages, Scenarios, and Formats},
+  author  = {Peng, Shangpin and Li, Gengluo and Wan, Xingyu and Zhang, Chengquan and Feng, Hao and Wu, Binghong and Shen, Huawen and Wang, Weinong and Cai, Ziyi and Tian, Zhuotao and Hu, Han and Ma, Can and Zhou, Yu},
+  journal = {arXiv preprint arXiv:2606.01348},
+  year    = {2026}
 }
 
-@misc{li2026structab,
-      title={StrucTab: A Structured Optimization Framework for Table Parsing},
-      author={Gengluo Li and Shangpin Peng and Chengquan Zhang and Binghong Wu and Hao Feng and Weinong Wang and Pengyuan Lyu and Huawen Shen and Xingyu Wan and Zhuotao Tian and Han Hu and Can Ma and Yu Zhou},
-      year={2026},
-      journal={arXiv preprint arXiv:2606.29905},
-      url={https://arxiv.org/abs/2606.29905},
+@article{StrucTab_2026,
+  title   = {{StrucTab}: A Structured Optimization Framework for Table Parsing},
+  author  = {Li, Gengluo and Peng, Shangpin and Zhang, Chengquan and Wu, Binghong and Feng, Hao and Wang, Weinong and Lyu, Pengyuan and Shen, Huawen and Wan, Xingyu and Tian, Zhuotao and Hu, Han and Ma, Can and Zhou, Yu},
+  journal = {arXiv preprint arXiv:2606.29905},
+  year    = {2026}
 }
 ```
 
