@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Multi-GPU HuggingFace transformers inference for HunyuanOCR-1.5
 (AR baseline, no vLLM, no DFlash).
@@ -28,9 +27,9 @@ vLLM path 1:1 in observable behavior.
 Usage
 -----
     python psp/infer_hf_8gpu_hyocr15.py \
-        --model  /apdcephfs_gy5/share_303464260/hunyuan/shangppeng/save_models/huggingface/OCR/HunyuanOCR \
-        --input  /apdcephfs_sh8/share_301266059/hunyuan/shangppeng/dataset/OCR/Benchmark/OmniDocBench/OmniDocBench_1_6.jsonl \
-        --output ./results/omnidoc_1_6_hf \
+        --model  "your/path/to/HunyuanOCR" \
+        --input  "your/path/to/input.jsonl" \
+        --output "./results/hf_out" \
         --merge
 
 Input JSONL — each line must contain:
@@ -47,14 +46,18 @@ import sys
 import time
 from typing import List
 
-# NOTE: torch / transformers are imported lazily inside the worker so that the
-# main process does not initialize CUDA before `spawn`.
-
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from utils.hunyuan_tasks import (
+    DEFAULT_TASK,
+    TASK_DESCRIPTIONS,
+    TASK_PROMPTS,
+    get_prompt,
+)
 
 # ============================================================================
 # Defaults — aligned with inference/infer_vllm_client.py
 # ============================================================================
-DEFAULT_PROMPT = "提取文档图片中正文的所有信息用markdown格式表示，其中页眉、页脚部分忽略，表格用html格式表达，文档中公式用latex格式表示，按照阅读顺序组织进行解析。"
+DEFAULT_PROMPT = TASK_PROMPTS[DEFAULT_TASK]
 
 
 # ============================================================================
@@ -308,16 +311,36 @@ def worker_main(
     eos_token_id = getattr(tokenizer, "eos_token_id", None)
     pad_token_id = getattr(tokenizer, "pad_token_id", None) or eos_token_id
 
-    # doc_parse markdown 规整 (与 vLLM client 同源, hunyuan_utils.process_one)。
-    # 默认开; --no-doc-postprocess 关闭。import 失败则静默跳过, 不影响主流程。
+    # ------------------------------------------------------------------
+    # Task routing (aligned with the vLLM client):
+    #   --task-type SET   → override every row's prompt with the official
+    #                       TASK_PROMPTS[task_type]; doc_pp iff task_type
+    #                       == "doc_parse".
+    #   --task-type UNSET → per-row prompt from JSONL[prompt_key] (fallback
+    #                       to --prompt); doc_pp only when the actual prompt
+    #                       matches the official doc_parse wording (avoids
+    #                       corrupting non-markdown outputs like spotting
+    #                       JSON, formula LaTeX, table HTML — see
+    #                       hunyuan_utils.py header comment).
+    # ------------------------------------------------------------------
+    forced_prompt = None
+    force_doc_pp_gate = None  # None → decide per-sample; True/False → fixed
+    if a.task_type:
+        forced_prompt = get_prompt(a.task_type)
+        force_doc_pp_gate = a.task_type == "doc_parse"
+    doc_parse_prompt = TASK_PROMPTS["doc_parse"]
+
     doc_pp = None
     if not a.no_doc_postprocess:
         try:
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            from hunyuan_utils import process_one as doc_pp
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+            from utils.hunyuan_utils import process_one as doc_pp
         except Exception as e:
             print(f"[GPU {gpu_id}] doc_postprocess unavailable ({e}); skipping.", file=sys.stderr, flush=True)
             doc_pp = None
+    if force_doc_pp_gate is False:
+        # Explicitly asked for a non-doc_parse task → disable normalization.
+        doc_pp = None
 
     output_path = f"{a.output}_{gpu_id + 1}.jsonl"
 
@@ -341,9 +364,12 @@ def worker_main(
                 img_path = unwrap_field(data, a.image_key)
                 if img_path is None:
                     raise ValueError(f"missing image field '{a.image_key}'")
-                prompt = unwrap_field(data, a.prompt_key, default=a.prompt)
-                if not prompt:
-                    prompt = a.prompt
+                if forced_prompt is not None:
+                    prompt = forced_prompt
+                else:
+                    prompt = unwrap_field(data, a.prompt_key, default=a.prompt)
+                    if not prompt:
+                        prompt = a.prompt
 
                 with Image.open(img_path) as raw:
                     image = raw.convert("RGB")
@@ -407,12 +433,19 @@ def worker_main(
                 out_text = decoded[0] if decoded else ""
                 out_text = clean_repeated_substrings(out_text)
                 # doc_parse markdown 规整 (对齐 vLLM client, 与 hunyuan_utils.process_one 同源).
-                # 默认开; --no-doc-postprocess 关闭。仅当 prompt 是 doc_parse 任务时生效。
+                # 默认开; --no-doc-postprocess 关闭。仅在当前样本是 doc_parse 任务时生效——
+                # --task-type 显式指定时直接看 force_doc_pp_gate, 否则通过 prompt 精确匹配
+                # 官方 doc_parse wording, 避免污染 spotting / formula / table 等非 markdown
+                # 输出 (见 inference/utils/hunyuan_utils.py 顶部 comment)。
                 if doc_pp is not None:
-                    try:
-                        out_text, _ = doc_pp(out_text)
-                    except Exception:
-                        pass
+                    apply_pp = (
+                        force_doc_pp_gate is True if force_doc_pp_gate is not None else prompt == doc_parse_prompt
+                    )
+                    if apply_pp:
+                        try:
+                            out_text, _ = doc_pp(out_text)
+                        except Exception:
+                            pass
                 data[a.answer_key] = out_text
 
                 fout.write(json.dumps(data, ensure_ascii=False) + "\n")
@@ -455,21 +488,33 @@ def parse_args():
     p = argparse.ArgumentParser(
         description="Multi-GPU HuggingFace transformers inference for HunyuanOCR-1.5 (AR baseline, no vLLM)."
     )
+    # Handle --list-tasks before requiring --output.
+    if "--list-tasks" in sys.argv:
+        print("Available task types (--task-type):")
+        for key in TASK_PROMPTS:
+            print(f"  {key:18s} {TASK_DESCRIPTIONS.get(key, '')}")
+        sys.exit(0)
     p.add_argument(
-        "--model",
-        default="/apdcephfs_gy5/share_303464260/hunyuan/shangppeng/save_models/huggingface/OCR/HunyuanOCR",
-        help="HunyuanOCR model directory",
+        "--list-tasks",
+        action="store_true",
+        help="list all official task types and exit",
     )
     p.add_argument(
-        "--input",
-        default="/apdcephfs_sh8/share_301266059/hunyuan/shangppeng/dataset/"
-        "OCR/Benchmark/OmniDocBench/OmniDocBench_1_6.jsonl",
-        help="input jsonl path",
+        "--task-type",
+        default=None,
+        choices=list(TASK_PROMPTS.keys()),
+        help=(
+            "force ALL rows to use the official prompt of this task (from "
+            "inference/utils/hunyuan_tasks.py); this also gates doc_parse markdown "
+            "normalization (only enabled for task_type='doc_parse'). "
+            "If unset (default), the per-row --prompt-key field is used (falling "
+            "back to --prompt), preserving the legacy JSONL-driven workflow."
+        ),
     )
+    p.add_argument("--model", default="your/path/to/HunyuanOCR", help="HunyuanOCR model directory")
+    p.add_argument("--input", default="your/path/to/input.jsonl", help="input jsonl path")
     p.add_argument(
-        "--output",
-        required=True,
-        help="output base path (no .jsonl suffix); files: <output>_<gpu_id>.jsonl",
+        "--output", required=True, help="output base path (no .jsonl suffix); files: <output>_<gpu_id>.jsonl"
     )
     p.add_argument("--num-gpus", type=int, default=8)
     p.add_argument(
@@ -503,7 +548,7 @@ def parse_args():
         "--no-doc-postprocess",
         action="store_true",
         help="disable doc_parse markdown normalization (hunyuan_utils.process_one). "
-             "Default: enabled, to match the vLLM client output convention.",
+        "Default: enabled, to match the vLLM client output convention.",
     )
 
     p.add_argument("--no-resume", action="store_true", help="disable resume (overwrite existing output files)")

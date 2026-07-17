@@ -40,25 +40,27 @@ Optional flags:
     --repetition-penalty      default 1.08
     --no-stream               disable streaming + early-stop (one-shot generation)
 """
+
 import argparse
 import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Shared output utilities (streaming/early-stop + doc_parse markdown normalization).
-from hunyuan_utils import (
+from utils.hunyuan_tasks import (
+    DEFAULT_TASK,
+    TASK_DESCRIPTIONS,
+    TASK_PROMPTS,
+    get_prompt,
+)
+from utils.hunyuan_utils import (
     clean_repeated_substrings,
     encode_image_as_data_url,
     infer_stream,
-    process_one as doc_parse_normalize,
 )
-# Fixed official task → prompt mapping (no free-form prompt).
-from hunyuan_tasks import (
-    TASK_PROMPTS,
-    TASK_DESCRIPTIONS,
-    DEFAULT_TASK,
-    get_prompt,
-)
+from utils.hunyuan_utils import process_one as doc_parse_normalize
 
 
 def _print_task_list():
@@ -70,28 +72,31 @@ def _print_task_list():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--image", help="Path to input image")
-    ap.add_argument("--task-type", default=DEFAULT_TASK, choices=list(TASK_PROMPTS.keys()),
-                    metavar="TASK",
-                    help="official task type (use --list-tasks to see all); "
-                         f"default: {DEFAULT_TASK}")
-    ap.add_argument("--list-tasks", action="store_true",
-                    help="print all task types and exit")
+    ap.add_argument(
+        "--task-type",
+        default=DEFAULT_TASK,
+        choices=list(TASK_PROMPTS.keys()),
+        metavar="TASK",
+        help=f"official task type (use --list-tasks to see all); default: {DEFAULT_TASK}",
+    )
+    ap.add_argument("--list-tasks", action="store_true", help="print all task types and exit")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
-    ap.add_argument("--model", default="tencent/HunyuanOCR",
-                    help="Must match vLLM --served-model-name")
+    ap.add_argument("--model", default="tencent/HunyuanOCR", help="Must match vLLM --served-model-name")
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--top-p", type=float, default=1.0)
     ap.add_argument("--top-k", type=int, default=-1)
     ap.add_argument("--repetition-penalty", type=float, default=1.08)
-    ap.add_argument("--repeat-min-repeats", type=int, default=8,
-                    help="tail-repeats threshold that triggers streaming early-stop")
-    ap.add_argument("--no-stream", action="store_true",
-                    help="disable streaming + early-stop (one-shot generation)")
-    ap.add_argument("--no-doc-postprocess", action="store_true",
-                    help="disable the doc_parse-only markdown normalization "
-                         "(hunyuan_utils.process_one)")
+    ap.add_argument(
+        "--repeat-min-repeats", type=int, default=8, help="tail-repeats threshold that triggers streaming early-stop"
+    )
+    ap.add_argument("--no-stream", action="store_true", help="disable streaming + early-stop (one-shot generation)")
+    ap.add_argument(
+        "--no-doc-postprocess",
+        action="store_true",
+        help="disable the doc_parse-only markdown normalization (hunyuan_utils.process_one)",
+    )
     ap.add_argument("--timeout", type=float, default=3600.0)
     args = ap.parse_args()
 
@@ -141,8 +146,10 @@ def main():
         },
     )
 
-    print(f"[info] POST http://{args.host}:{args.port}/v1/chat/completions "
-          f"(model={args.model}, task={args.task_type}, stream={not args.no_stream})")
+    print(
+        f"[info] POST http://{args.host}:{args.port}/v1/chat/completions "
+        f"(model={args.model}, task={args.task_type}, stream={not args.no_stream})"
+    )
     t = time.time()
 
     early_stopped = False
@@ -153,7 +160,9 @@ def main():
         usage = getattr(resp, "usage", None)
     else:
         text, early_stopped = infer_stream(
-            client, common_kwargs, args.repeat_min_repeats,
+            client,
+            common_kwargs,
+            args.repeat_min_repeats,
         )
 
     text = clean_repeated_substrings(text)
