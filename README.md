@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-<a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 Model</b></a> |
+<a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 HF Model</b></a> |
 <a href="https://arxiv.org/pdf/2607.04884"><b>📄 Paper</b></a>
 </p>
 
 > [!NOTE]
-> 👉 Looking for the original **HunyuanOCR 1.0** release? Switch to the
+> 👉 Looking for the original **HunyuanOCR-1.0** release? Switch to the
 > [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) branch, or read
 > [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
 
@@ -36,7 +36,7 @@
 - **[2026/04/08]** 🎉 Our works on document parsing and text-image machine translation have been accepted to the CVPR 2026 Main Conference! Check out the papers: [Towards Real-World Document Parsing via Realistic Scene Synthesis and Document-Aware Training](https://arxiv.org/abs/2603.23885) and [MMTIT-Bench: A Multilingual and Multi-Scenario Benchmark with Cognition-Perception-Reasoning Guided Text-Image Machine Translation](https://arxiv.org/abs/2603.23896).
 
 <details>
-<summary>📜 Archived news (HunyuanOCR 1.0)</summary>
+<summary>📜 Archived news (HunyuanOCR-1.0)</summary>
 
 - **[2026/01/13]** ⭐ We have released a stable official [online demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh), feel free to try it out!
 - **[2025/11/28]** 🛠️ We fixed vLLM inference bugs and hyperparameter configuration issues such as system prompt. It is recommended to use the latest vLLM installation steps and the [inference script](https://github.com/Tencent-Hunyuan/HunyuanOCR/blob/main/Hunyuan-OCR-master/Hunyuan-OCR-vllm/run_hy_ocr.py) for performance testing. Currently, there is still a certain accuracy difference between Transformers and the vLLM framework (we are working on fixing this).
@@ -65,7 +65,7 @@ the model faster and better**:
   by the target model in a single pass. This significantly reduces the decoding latency of long
   structured outputs while **preserving the output distribution** of the target model.
 
-- 💻 **PC-side deployment via llama.cpp.** 🔧 _(work in progress — accuracy not yet aligned)_
+- 💻 **PC-side deployment via llama.cpp.**
   Beyond server-grade vLLM, HunyuanOCR-1.5 also supports **CPU / consumer-GPU / laptop** deployment
   through [`llama.cpp`](https://github.com/ggml-org/llama.cpp) with a GGUF-converted checkpoint and
   an OpenAI-compatible `llama-server`. A DFlash-adapted `llama.cpp` fork is provided as well, so the
@@ -378,5 +378,5 @@ Special thanks to the Hugging Face community for their Day-0 support.
 
 ## 📜 License
 
-HunyuanOCR-1.5 is released under the same license as HunyuanOCR 1.0 —
+HunyuanOCR-1.5 is released under the same license as HunyuanOCR-1.0 —
 the **Tencent Hunyuan Community License Agreement**. See [`LICENSE`](LICENSE) for the full terms.

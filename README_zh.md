@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-<a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 模型</b></a> |
+<a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 HF 模型</b></a> |
 <a href="https://arxiv.org/pdf/2607.04884"><b>📄 论文</b></a>
 </p>
 
 > [!NOTE]
-> 👉 需要原始的 **HunyuanOCR 1.0** 版本？请切换到
+> 👉 需要原始的 **HunyuanOCR-1.0** 版本？请切换到
 > [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) 分支，或阅读
 > [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
 
@@ -36,7 +36,7 @@
 - **[2026/04/08]** 🎉 我们在文档解析与文本图像机器翻译方向的两项研究成果被 CVPR 2026 Main Conference 正式接收！详见论文：[2603.23885](https://arxiv.org/abs/2603.23885)、[2603.23896](https://arxiv.org/abs/2603.23896)。
 
 <details>
-<summary>📜 历史归档动态（HunyuanOCR 1.0）</summary>
+<summary>📜 历史归档动态（HunyuanOCR-1.0）</summary>
 
 - **[2026/01/13]** ⭐ 我们发布了稳定的官方[在线 Demo](https://hunyuan.tencent.com/chat/HunyuanDefault?modelId=HY-OCR-1.0&mid=308&from=vision-zh) 页面, 欢迎试用！
 - **[2025/11/28]** 🛠️ 我们修复了 vLLM 推理 bug 以及 system prompt 等超参配置问题。建议使用最新的 vLLM 安装步骤和[推理脚本](https://github.com/Tencent-Hunyuan/HunyuanOCR/blob/main/Hunyuan-OCR-master/Hunyuan-OCR-vllm/run_hy_ocr.py)进行效果测试。目前 Transformers 相比 vLLM 框架仍然存在一定的精度差异（正在努力修复中）。
@@ -55,7 +55,7 @@
 - ⚡ **更快 —— DFlash 推理加速。**
   端到端 OCR 通常伴随较长的自回归解码，这在稠密文档、表格、公式等长结构化输出场景中会成为主要瓶颈。HunyuanOCR-1.5 适配了基于 **DFlash** 的投机解码（speculative decoding）框架：一个轻量的块扩散（block-diffusion）草稿模型并行起草多个候选 token，再由目标模型一次性验证。这显著降低了长结构化输出的解码延迟，同时**保持目标模型的输出分布不变**。
 
-- 💻 **PC 端部署（llama.cpp）。** 🔧
+- 💻 **PC 端部署（llama.cpp）。**
   除了服务器级的 vLLM，HunyuanOCR-1.5 还支持通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 在 **CPU / 消费级 GPU / 笔记本** 上部署：使用转换后的 GGUF 权重和 OpenAI 兼容的 `llama-server`。同时我们还提供了一个适配 DFlash 的 `llama.cpp` 分支，因此同样的投机解码加速在 PC 端也可用。详见 [`docs/llama_cpp.md`](docs/llama_cpp.md)。
 
 - 🧠 **更强 —— Agentic Data Flow + 升级的训练配方。**
@@ -345,6 +345,6 @@ build/bin/llama-server \
 
 ## 📜 许可证
 
-HunyuanOCR-1.5 采用与 HunyuanOCR 1.0 相同的许可证 ——
+HunyuanOCR-1.5 采用与 HunyuanOCR-1.0 相同的许可证 ——
 **Tencent Hunyuan Community License Agreement（腾讯混元社区许可协议）**。
 完整条款见 [`LICENSE`](LICENSE)。

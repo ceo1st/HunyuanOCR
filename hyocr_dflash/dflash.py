@@ -1,21 +1,23 @@
-from typing import Optional, Callable
-from typing_extensions import Unpack, Tuple
+from typing import Callable, Optional
+
 import torch
 from torch import nn
+from transformers.cache_utils import Cache
+from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.models.qwen3.modeling_qwen3 import (
+    ALL_ATTENTION_FUNCTIONS,
+    FlashAttentionKwargs,
+    GradientCheckpointingLayer,
+    Qwen3Config,
+    Qwen3MLP,
+    Qwen3PreTrainedModel,
     Qwen3RMSNorm,
     Qwen3RotaryEmbedding,
-    Qwen3Config,
-    Qwen3PreTrainedModel,
-    Qwen3MLP,
-    GradientCheckpointingLayer,
-    FlashAttentionKwargs,
-    rotate_half,
     eager_attention_forward,
-    ALL_ATTENTION_FUNCTIONS,
+    rotate_half,
 )
-from transformers.modeling_outputs import CausalLMOutputWithPast
-from transformers.cache_utils import Cache
+from typing_extensions import Tuple, Unpack
+
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     cos = cos.unsqueeze(unsqueeze_dim)
@@ -24,6 +26,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
     q_embed = (q * cos[..., -q_len:, :]) + (rotate_half(q) * sin[..., -q_len:, :])
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
+
 
 class Qwen3DFlashAttention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
@@ -36,7 +39,7 @@ class Qwen3DFlashAttention(nn.Module):
         self.num_key_value_groups = config.num_attention_heads // config.num_key_value_heads
         self.scaling = self.head_dim**-0.5
         self.attention_dropout = config.attention_dropout
-        self.is_causal = False  
+        self.is_causal = False
         self.q_proj = nn.Linear(
             config.hidden_size, config.num_attention_heads * self.head_dim, bias=config.attention_bias
         )
@@ -99,6 +102,7 @@ class Qwen3DFlashAttention(nn.Module):
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights
 
+
 class Qwen3DFlashDecoderLayer(GradientCheckpointingLayer):
     def __init__(self, config: Qwen3Config, layer_idx: int):
         super().__init__()
@@ -141,6 +145,7 @@ class Qwen3DFlashDecoderLayer(GradientCheckpointingLayer):
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
         return hidden_states
+
 
 class DFlashDraftModel(Qwen3PreTrainedModel):
     config_class = Qwen3Config

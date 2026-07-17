@@ -3,12 +3,12 @@ license: other
 license_name: tencent-hunyuan-community
 license_link: https://huggingface.co/tencent/HunyuanOCR/blob/main/LICENSE
 tags:
-- ocr
-- speculative-decoding
-- draft-model
-- dflash
-- block-diffusion
-- vision-language-model
+  - ocr
+  - speculative-decoding
+  - draft-model
+  - dflash
+  - block-diffusion
+  - vision-language-model
 base_model: tencent/HunyuanOCR
 library_name: transformers
 ---
@@ -21,8 +21,7 @@ library_name: transformers
 
 </div>
 
-
-> ⚠️ **This model is not usable standalone.** It is a *draft model* used only
+> ⚠️ **This model is not usable standalone.** It is a _draft model_ used only
 > for **speculative decoding** together with the target model
 > [`tencent/HunyuanOCR`](https://huggingface.co/tencent/HunyuanOCR).
 
@@ -70,6 +69,7 @@ uv pip install runai-model-streamer
 
 > 💡 On CUDA 12.x, replace `--torch-backend=cu130` with the matching tag
 > (e.g. `cu121`, `cu124`).
+
 ---
 
 ## 🚀 How to use
@@ -141,12 +141,12 @@ smoke-test client).
 
 ## 📦 Files in this repo
 
-| file | purpose |
-|---|---|
-| `model.safetensors` | draft weights (float32) |
-| `config.json` | draft config; sets `auto_map` to `dflash.DFlashDraftModel` |
-| `dflash.py` | `DFlashDraftModel` implementation (loaded via `trust_remote_code=True`) |
-| `chat_template.jinja`, `tokenizer.json`, `tokenizer_config.json`, `processor_config.json` | tokenizer / processor, kept in sync with the target model |
+| file                                                                                      | purpose                                                                 |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `model.safetensors`                                                                       | draft weights (float32)                                                 |
+| `config.json`                                                                             | draft config; sets `auto_map` to `dflash.DFlashDraftModel`              |
+| `dflash.py`                                                                               | `DFlashDraftModel` implementation (loaded via `trust_remote_code=True`) |
+| `chat_template.jinja`, `tokenizer.json`, `tokenizer_config.json`, `processor_config.json` | tokenizer / processor, kept in sync with the target model               |
 
 ---
 
@@ -163,6 +163,4 @@ smoke-test client).
 
 ## 📜 License
 
-HunyuanOCR-1.5 (including the DFlash draft) is released under the same license
-as HunyuanOCR 1.0 — the **Tencent Hunyuan Community License Agreement**.
-
+HunyuanOCR-1.5 (including the DFlash draft) is released under the same license as HunyuanOCR-1.0 — the **Tencent Hunyuan Community License Agreement**.

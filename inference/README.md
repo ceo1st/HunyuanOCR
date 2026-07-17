@@ -12,11 +12,11 @@ early-stop + markdown normalization), so their outputs are directly comparable.
 
 ## Which one should I use?
 
-| Your situation | Use | vLLM AR | DFlash accel. | transformers |
-|---|---|:-:|:-:|:-:|
-| CUDA 12, want the simplest setup | [`vllm_0_18_1/`](./vllm_0_18_1) | ✅ | ❌ | ❌ |
-| Want DFlash speculative decoding (needs CUDA 13) | [`nightly/`](./nightly) | ✅ | ✅ | ❌ |
-| Want native HuggingFace transformers inference | [`transformers/`](./transformers) | — | — | ✅ |
+| Your situation                                   | Use                               | vLLM AR | DFlash accel. | transformers |
+| ------------------------------------------------ | --------------------------------- | :-----: | :-----------: | :----------: |
+| CUDA 12, want the simplest setup                 | [`vllm_0_18_1/`](./vllm_0_18_1)   |   ✅    |      ❌       |      ❌      |
+| Want DFlash speculative decoding (needs CUDA 13) | [`nightly/`](./nightly)           |   ✅    |      ✅       |      ❌      |
+| Want native HuggingFace transformers inference   | [`transformers/`](./transformers) |    —    |       —       |      ✅      |
 
 Each subfolder ships its own README and requirements — just follow it.
 
@@ -27,15 +27,15 @@ Each subfolder ships its own README and requirements — just follow it.
 The key constraints are mutually exclusive, so a single environment cannot
 satisfy all of them. This is a validated conclusion, not a preference:
 
-| | `vllm_0_18_1` | `nightly` | `transformers` |
-|---|---|---|---|
-| vLLM | **0.18.1** (release) | **nightly** (0.23.1rc1) | not used |
-| transformers | 4.57.6 | 5.5.3 (must pin) | **5.13.0** |
-| CUDA | 12.x (native, one pip) | 13 (torch cu130 + compat lib) | matches host driver (cu128/cu130) |
-| Python | 3.10 | 3.12 | 3.12 |
-| Runs AR | ✅ | ✅ | ✅ (HF generate) |
-| Runs DFlash | ❌ | ✅ | ❌ |
-| Runs transformers | ❌ | ❌ | ✅ |
+|                   | `vllm_0_18_1`          | `nightly`                     | `transformers`                    |
+| ----------------- | ---------------------- | ----------------------------- | --------------------------------- |
+| vLLM              | **0.18.1** (release)   | **nightly** (0.23.1rc1)       | not used                          |
+| transformers      | 4.57.6                 | 5.5.3 (must pin)              | **5.13.0**                        |
+| CUDA              | 12.x (native, one pip) | 13 (torch cu130 + compat lib) | matches host driver (cu128/cu130) |
+| Python            | 3.10                   | 3.12                          | 3.12                              |
+| Runs AR           | ✅                     | ✅                            | ✅ (HF generate)                  |
+| Runs DFlash       | ❌                     | ✅                            | ❌                                |
+| Runs transformers | ❌                     | ❌                            | ✅                                |
 
 1. **DFlash is registered only in vLLM nightly (cu130)** → DFlash requires
    nightly + CUDA 13; the 0.18.1 release has no `dflash` method.
