@@ -11,7 +11,7 @@
 </div>
 
 <p align="center">
- <img src="./assets/hyocr-1.5-head-img.png" width="90%"/> <br>
+ <img src="./assets/HyOCR_1_5_teaser.png" width="90%"/> <br>
 </p>
 
 <p align="center">

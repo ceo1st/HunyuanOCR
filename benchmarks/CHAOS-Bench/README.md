@@ -6,8 +6,11 @@
 
 **C**haracter-level **H**allucination **A**ssessment for **O**CR **S**eeing-is-believing
 
-</div>
+<p align="center">
+ <img src="./CHAOS_Bench_vis.png" width="90%"/> <br>
+</p>
 
+</div>
 <p align="center">
 <a href="https://arxiv.org/abs/2607.04884"><b>📄 Paper</b></a> •
 <a href="https://github.com/Tencent-Hunyuan/HunyuanOCR"><b>💻 HunyuanOCR</b></a>
@@ -25,8 +28,8 @@ The core idea is simple but revealing: we take real academic-paper page images a
 **character-level corruptions** into selected words (e.g. `participant` → `qarticipant`,
 `about` → `abcut`). These corrupted words are visually present but linguistically implausible.
 A model that genuinely perceives the pixels should report the corrupted string; a model that leans
-on its language prior will silently "auto-correct" it back to the plausible word — exposing a
-perception–cognition gap and a form of OCR hallucination.
+on its language prior will silently "auto-correct" it back to the plausible word, exposing a
+perception–cognition gap.
 
 ## 📊 Statistics
 

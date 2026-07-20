@@ -6,24 +6,23 @@
 
 **C**haracter-level **H**allucination **A**ssessment for **O**CR **S**eeing-is-believing
 
-</div>
+<p align="center">
+ <img src="./CHAOS_Bench_vis.png" width="90%"/> <br>
+</p>
 
+</div>
 <p align="center">
 <a href="https://arxiv.org/abs/2607.04884"><b>📄 论文</b></a> •
-<a href="https://github.com/Tencent-Hunyuan/HunyuanOCR"><b>💻 HunyuanOCR</b></a>
+<a href="https://github.com/Tencent-Hunyuan/HunyuanOCR"><b>💻 HunyuanOCR 仓库</b></a>
 </p>
 
 ---
 
 ## 📖 简介
 
-**CHAOS-Bench** 是一个用于检验视觉语言模型（VLM）**"所见即所得"**能力的诊断性评测基准，
-即考察模型是**真正识别图像中的文字**，还是依赖语言先验**产生幻觉**、脑补出"看起来更合理"的词。
+**CHAOS-Bench** 是一个用于检验视觉语言模型（VLM）**"所见即所得"**能力的诊断性评测基准，即考察模型是**真正识别图像中的文字**，还是依赖语言先验**产生幻觉**、脑补出"看起来更合理"的词。
 
-核心思路简单而有效：我们在真实的学术论文页面图像中，对选定词汇注入**字符级篡改**
-（例如 `participant` → `qarticipant`、`about` → `abcut`）。这些被篡改的词在视觉上真实存在，
-但在语言上并不合理。真正"看像素"的模型应当输出被篡改后的字符串；而依赖语言先验的模型则会
-悄悄地把它"自动纠正"回合理的原词——从而暴露出感知与认知之间的鸿沟，也即一种 OCR 幻觉。
+核心思路简单而有效：在真实的学术论文页面图像中，对选定词汇注入**字符级篡改**（例如 `participant` → `qarticipant`、`about` → `abcut`）。这些被篡改的词在视觉上真实存在，但在语言上并不合理。真正"看像素"的模型应当输出被篡改后的字符串；而依赖语言先验的模型则会悄悄地把它"自动纠正"回合理的原词，从而暴露出感知与认知之间的鸿沟。
 
 ## 📊 数据统计
 
