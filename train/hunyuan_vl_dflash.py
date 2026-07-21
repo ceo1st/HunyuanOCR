@@ -428,12 +428,15 @@ class MYDraft(Qwen3PreTrainedModel):
         hidden_size  = config.hidden_size
         self.hidden_size = hidden_size
         # config = copy.deepcopy(config)
-        # Load draft model config from local ./hyocr_dflash directory.
-        # Allow override via env var HYOCR_DFLASH_CONFIG_DIR if needed.
+        # Load the DFlash draft-model config template (config.json + dflash.py).
+        # Default: train/configs/ next to this file. Override with the env var
+        # HYOCR_DFLASH_CONFIG_DIR to point at any directory that contains a
+        # compatible config.json + dflash.py (e.g. the dflash/ subfolder that
+        # ships with the HuggingFace HunyuanOCR release).
         import os
         _dflash_cfg_dir = os.environ.get(
             "HYOCR_DFLASH_CONFIG_DIR",
-            os.path.join(project_root, "hyocr_dflash"),
+            str(Path(__file__).parent / "configs"),
         )
         config_dflash = AutoConfig.from_pretrained(_dflash_cfg_dir, trust_remote_code=True)
         config_dflash._attn_implementation = "flex_attention"

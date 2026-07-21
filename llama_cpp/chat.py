@@ -3,7 +3,7 @@
 Two modes:
 
     # Batch mode (JSONL input; task-type routing + doc_parse post-processing,
-    # aligned with inference/transformers/infer_hf_8gpu_hyocr15.py):
+    # aligned with inference/transformers/infer_hf_8gpu.py):
     python chat.py --input test_assets/data.jsonl [--task-type doc_parse] [...]
 
     # Smoke test on the bundled OCR images (no JSONL needed):
@@ -103,7 +103,7 @@ def chat(
 def maybe_postprocess(text: str, prompt: str, task_type: str, disable: bool) -> str:
     """Apply hunyuan_utils.process_one iff the row is a doc_parse task.
 
-    Matches the gating logic in inference/transformers/infer_hf_8gpu_hyocr15.py:
+    Matches the gating logic in inference/transformers/infer_hf_8gpu.py:
       * --task-type set   -> apply iff task_type == "doc_parse"
       * --task-type unset -> apply iff `prompt` equals the official doc_parse
                              wording (the per-row prompt drove inference)
@@ -161,7 +161,7 @@ def _parse_args():
     p = argparse.ArgumentParser(
         description=(
             "Batch OCR client for the local llama.cpp / vLLM server, aligned "
-            "with inference/transformers/infer_hf_8gpu_hyocr15.py "
+            "with inference/transformers/infer_hf_8gpu.py "
             "(task-type routing + doc_parse markdown normalization)."
         )
     )

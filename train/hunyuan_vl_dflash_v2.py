@@ -8,7 +8,9 @@ Differences from the original ``MYDraft``:
      base model. Instead, it loads draft weights from
      ``dflash_init_dir/model.safetensors`` (if provided).
   2. The draft config (``config_dflash``) is loaded from ``dflash_init_dir``
-     when provided, otherwise it falls back to the local ``./hyocr_dflash``.
+     when provided, otherwise it falls back to the bundled draft config
+     template at ``train/configs/`` (overridable via the env var
+     ``HYOCR_DFLASH_CONFIG_DIR``).
   3. Strict mismatch handling: prints any missing / unexpected keys so you can
      see whether the load was clean.
 
@@ -91,14 +93,15 @@ class MYDraftFromDFlash(MYDraft):
         self.hidden_size = hidden_size
 
         # ── 2. Load DFlash config from dflash_init_dir (if given), or fallback
-        #       to the bundled ./hyocr_dflash directory.
+        #       to the bundled draft config template at train/configs/.
+        #       The env var HYOCR_DFLASH_CONFIG_DIR overrides the fallback.
         if dflash_init_dir is not None and os.path.isdir(dflash_init_dir):
             cfg_dir = dflash_init_dir
             print(f"[MYDraftFromDFlash] Loading dflash config from: {cfg_dir}")
         else:
             cfg_dir = os.environ.get(
                 "HYOCR_DFLASH_CONFIG_DIR",
-                os.path.join(str(project_root), "hyocr_dflash"),
+                str(Path(__file__).parent / "configs"),
             )
             print(f"[MYDraftFromDFlash] dflash_init_dir not given, "
                   f"falling back to template config dir: {cfg_dir}")

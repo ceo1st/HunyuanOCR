@@ -41,6 +41,12 @@ model_name_or_path=${MODEL_PATH:-/path/to/HunyuanOCR/base/model}
 train_data_path=${TRAIN_DATA:-./data/parsing_packed_20480.jsonl}
 image_path="not_needed"
 
+# DFlash draft config template (config.json + dflash.py).
+# Default: train/configs/ (bundled with the repo).
+# Override to any directory containing a compatible config.json + dflash.py,
+# e.g. the dflash/ subfolder that ships with the HuggingFace HunyuanOCR release.
+export HYOCR_DFLASH_CONFIG_DIR=${HYOCR_DFLASH_CONFIG_DIR:-train/configs}
+
 # ────────────── Hyperparameters (from-scratch profile) ──────────────
 lr=${LR:-1e-4}
 batch_size=${BATCH_SIZE:-1}

@@ -41,9 +41,15 @@ model_name_or_path=${MODEL_PATH:-/path/to/HunyuanOCR/base/model}
 
 # (b) DFlash init dir: existing draft checkpoint to continue-train from.
 #     Must contain config.json + model.safetensors (or pytorch_model.bin).
-dflash_init_dir=${DFLASH_INIT:-/path/to/hyocr_dflash/existing_checkpoint}
+#     The draft config is loaded from THIS directory when it is a valid dir;
+#     otherwise the code falls back to HYOCR_DFLASH_CONFIG_DIR (below).
+dflash_init_dir=${DFLASH_INIT:-/path/to/existing/dflash/checkpoint}
 
-# (c) Training data
+# (c) Fallback draft-config template (used only when dflash_init_dir is not a
+#     valid directory). Default: train/configs/ (bundled with the repo).
+export HYOCR_DFLASH_CONFIG_DIR=${HYOCR_DFLASH_CONFIG_DIR:-train/configs}
+
+# (d) Training data
 train_data_path=${TRAIN_DATA:-./data/parsing_packed_20480.jsonl}
 image_path="not_needed"
 

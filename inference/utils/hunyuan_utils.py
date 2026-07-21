@@ -3,12 +3,13 @@ HunyuanOCR-1.5 output utilities (shared, importable).
 
 Two groups of helpers, all operating on model output text:
 
-  1. Streaming + tail-repetition control (byte-for-byte identical to the official
-     inference/infer_vllm_client.py, which mirrors vllm/infer_vllm_8gpu.py):
+  1. Streaming + tail-repetition control, shared verbatim by all inference entry
+     points (`inference/vLLM/infer_vllm_client.py`,
+     `inference/vLLM/batch_infer.py`,
+     `inference/transformers/infer_hf_8gpu.py`):
        - has_tail_repetition / clean_repeated_substrings / infer_stream
        - encode_image_as_data_url
-     These guard against the greedy-decoding repetition degeneration and are used
-     by every inference entry point.
+     These guard against the greedy-decoding repetition degeneration.
 
   2. Markdown normalization for the doc_parse task (process_one): 10 conservative
      patterns that align the model's markdown to the OmniDocBench GT convention
@@ -28,7 +29,7 @@ from collections import defaultdict
 # Group 1 — streaming / tail-repetition control + image encoding
 # ==========================================================================
 
-# ---------- tail-repetition helpers (mirror vllm/infer_vllm_8gpu.py) ----------
+# ---------- tail-repetition helpers ----------
 def has_tail_repetition(text: str, min_repeats: int = 8, max_unit: int = 256) -> bool:
     """Detect if the tail of `text` is stuck in a small repeated unit."""
     n = len(text)
@@ -68,9 +69,8 @@ def clean_repeated_substrings(text: str, min_repeats: int = 10) -> str:
 
 # ---------- image encoding ----------
 def encode_image_as_data_url(path: str) -> str:
-    """Read image -> base64 data URL. Mime is fixed to `image/jpeg` to match the
-    production `vllm/infer_vllm_8gpu.py` behavior (vLLM does not care about the
-    declared mime for base64 image payloads)."""
+    """Read image -> base64 data URL. Mime is fixed to `image/jpeg`
+    (vLLM does not care about the declared mime for base64 image payloads)."""
     with open(path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode("utf-8")
     return f"data:image/jpeg;base64,{b64}"
