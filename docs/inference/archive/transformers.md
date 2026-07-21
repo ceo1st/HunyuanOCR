@@ -1,5 +1,7 @@
 # Setup C · HunyuanOCR-1.5 native transformers inference (multi-GPU, no vLLM)
 
+[中文阅读](./transformers_zh.md)
+
 Load `HunYuanVLForConditionalGeneration` directly with HuggingFace
 **transformers 5.13.0** and run inference without vLLM. Multi-GPU parallelism
 (one model replica per GPU via `multiprocessing.spawn`), with sampling
@@ -8,7 +10,7 @@ tail-repetition early-stop + doc_parse markdown normalization).
 
 Use this when you need native transformers inference / alignment checks /
 accuracy comparison. **For throughput and production, use a vLLM setup**
-([`../nightly`](../nightly) or [`../vllm_0_18_1`](../vllm_0_18_1)) — transformers
+([`DFlash`](./DFlash.md) or [`vLLM`](./vLLM.md)) — transformers
 has no continuous batching and processes images serially (~40–200 s per image,
 markedly slower than vLLM).
 
@@ -43,7 +45,7 @@ transformers 5.13.0**. However:
 
 So **transformers inference must use a dedicated environment with transformers
 5.13.0, and that environment cannot also run vLLM**. For a three-way comparison,
-run vLLM AR + DFlash from `../nightly` and transformers here — same kernel,
+run vLLM AR + DFlash from [`DFlash`](./DFlash.md) and transformers here — same kernel,
 weights, and sampling, so the comparison holds.
 
 ---
@@ -63,11 +65,11 @@ may peak higher).
 **Step 1: check the CUDA version your host driver supports** (top-right of
 `nvidia-smi`, `CUDA Version: X.Y`):
 
-| Host driver                        | torch backend to install | compat needed?                               |
-| ---------------------------------- | ------------------------ | -------------------------------------------- |
-| CUDA 12.x (e.g. driver 535 → 12.8) | `cu128`                  | ❌ no ← validated path                       |
-| CUDA 13.x / driver ≥ 580           | `cu130`                  | ❌ no                                        |
-| forced to cu130 but driver < 580   | `cu130`                  | ✅ yes (see [`../nightly`](../nightly) §1.2) |
+| Host driver                        | torch backend to install | compat needed?                            |
+| ---------------------------------- | ------------------------ | ----------------------------------------- |
+| CUDA 12.x (e.g. driver 535 → 12.8) | `cu128`                  | ❌ no ← validated path                    |
+| CUDA 13.x / driver ≥ 580           | `cu130`                  | ❌ no                                     |
+| forced to cu130 but driver < 580   | `cu130`                  | ✅ yes (see [`DFlash`](./DFlash.md) §1.2) |
 
 **Step 2: install from scratch** (example: host `driver 535 / CUDA 12.8` →
 `cu128`, no compat):
@@ -92,7 +94,7 @@ uv pip install "transformers==5.13.0" accelerate pillow tqdm
 >   `python 3.12.3`.
 > - **Only if you are forced to cu130 with a host driver < 580** do you need the
 >   CUDA 13 compat library — see
->   [`../nightly/README.md`](../nightly/README.md) §1.2; then
+>   [`DFlash`](./DFlash.md) §1.2; then
 >   `export LD_LIBRARY_PATH=/ABS/PATH/cuda_compat_13/extracted:$LD_LIBRARY_PATH`
 >   before running.
 
@@ -130,7 +132,7 @@ key `image_path`) and an optional prompt field (default key `问题`; falls back
 # Only needed if you are forced to cu130 with a host driver < 580; not needed when cu128 matches the host:
 # export LD_LIBRARY_PATH=/ABS/PATH/cuda_compat_13/extracted:$LD_LIBRARY_PATH
 
-python infer_hf_8gpu_hyocr15.py \
+python infer_hf_8gpu.py \
     --model  "your/path/to/HunyuanOCR" \
     --input  "your/path/to/input.jsonl" \
     --output "./results/hf_out" \
@@ -183,7 +185,7 @@ script's header docstring):
 | doc_parse normalization    | ✅ (on by default) | `hunyuan_utils.process_one`, shared with the vLLM client                                        |
 | skip_special_tokens        | True               | `batch_decode(skip_special_tokens=True)`                                                        |
 
-Model loading follows the official `infer_base.py`:
+Model loading follows the official HunyuanOCR HuggingFace inference recipe:
 `HunYuanVLForConditionalGeneration` + `AutoProcessor`, `dtype=bfloat16`,
 `attn_implementation=eager`, including the video-token patch for older tokenizer
 snapshots.
@@ -193,15 +195,13 @@ snapshots.
 ## 6. Files
 
 ```
-transformers/
-├── README.md                  # this file
-├── requirements.txt           # tf5.13 standalone-env install notes + validated versions
-└── infer_hf_8gpu_hyocr15.py   # multi-GPU transformers inference (self-contained: load/early-stop/cleanup)
+inference/transformers/
+└── infer_hf_8gpu.py   # multi-GPU transformers inference (self-contained: load/early-stop/cleanup)
 ```
 
 > The doc_parse markdown normalization (`process_one`) is imported from
-> `../utils/hunyuan_utils.py` — a single shared copy across `vllm_0_18_1/`,
-> `nightly/`, and `transformers/`.
+> `inference/utils/hunyuan_utils.py` — a single shared copy across
+> `inference/vLLM/`, `inference/DFlash/`, and `inference/transformers/`.
 
 > Image resolution uses the model default (`max_pixels ≈ 4096×4096`); no
 > configuration needed.

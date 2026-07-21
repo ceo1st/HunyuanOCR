@@ -1,5 +1,7 @@
 # Data Format & Packing Pipeline
 
+[中文阅读](./data_format_zh.md)
+
 ## Overview
 
 Training expects **packed** JSONL: each line contains multiple original samples concatenated into a single sequence up to `pack_length` tokens. This maximizes GPU utilization by removing padding waste.

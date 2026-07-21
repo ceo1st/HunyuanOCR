@@ -1,12 +1,14 @@
 # Setup B · HunyuanOCR-1.5 with vLLM nightly (CUDA 13, AR + DFlash)
 
+[中文阅读](./DFlash_zh.md)
+
 The vLLM **nightly** setup supports both **autoregressive (AR)** decoding and
 **DFlash speculative decoding** (lossless acceleration; the longer the output,
-the larger the gain). This folder ships the DFlash draft config and custom code
-at `hyocr_dflash/`; download its weight from HuggingFace (see §2). The
+the larger the gain). The DFlash draft model lives in the `dflash/` subfolder of
+the HF model repo and is downloaded together with the base model (see §2). The
 environment is heavier than Setup A: it needs CUDA 13
 (torch cu130) plus a CUDA 13 compat library. For native transformers inference
-use [`../transformers`](../transformers) (the transformers 5.5.3 in this setup
+use [`transformers`](./transformers.md) (the transformers 5.5.3 in this setup
 does not support it).
 
 > Validated from a clean install on Python 3.12 + vLLM nightly (cu130) +
@@ -84,7 +86,7 @@ uv pip install "transformers==5.5.3" --no-deps
 > Verify: `python -c "import transformers; print(transformers.__version__)"`
 > should print `5.5.3`. If you need native HuggingFace transformers inference
 > (which requires transformers 5.13.0), that is a **separate, independent
-> environment** — see [`../transformers`](../transformers). It cannot share this
+> environment** — see [`transformers`](./transformers.md). It cannot share this
 > vLLM environment.
 
 #### ⚠️ Step 3 (required): uninstall torchcodec
@@ -230,34 +232,35 @@ python -c "import transformers; print('transformers:', transformers.__version__)
 
 ```bash
 pip install -U "huggingface_hub[cli]"
-# main model weights
+# base model + DFlash draft in one shot: the draft lives in the dflash/ subfolder
 huggingface-cli download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
-# DFlash draft weight → drop it next to the bundled config/code in hyocr_dflash/
-huggingface-cli download tencent/HunyuanOCR dflash/model.safetensors \
-    --local-dir ./HunyuanOCR
-cp ./HunyuanOCR/dflash/model.safetensors ./hyocr_dflash/model.safetensors
 ```
 
-This folder ships the draft **config and custom code** at `hyocr_dflash/`
-(`config.json` + `dflash.py` + tokenizer). The **weight file
-(`model.safetensors`) is not committed to Git** — download it from HuggingFace
-as shown above. Once it is in `hyocr_dflash/`, `serve_dflash.sh` uses that folder
-as the default `DFLASH_PATH`; alternatively point `DFLASH_PATH` at the full
-`./HunyuanOCR/dflash` you downloaded.
+The HF model repo ships the DFlash draft (`config.json` + `dflash.py` +
+tokenizer + `model.safetensors`) under the `dflash/` subfolder, so the single
+download above pulls both the base model and the draft. `serve_DFlash.sh` then
+uses `${MODEL_PATH}/dflash` as the default `DFLASH_PATH`; override `DFLASH_PATH`
+only if you keep the draft elsewhere.
 
 ---
 
 ## 3. Start the server (single GPU)
+
+> AR and DFlash are launched with the same server scripts that ship with the
+> current unified layout — `inference/vLLM/serve.sh` for AR and
+> `inference/DFlash/serve_DFlash.sh` for DFlash. Their internals (vLLM flags,
+> sampling defaults, DFlash `--speculative-config`) match what this old
+> nightly setup used, so the recipe below still applies.
 
 ```bash
 # ⚠️ Set the compat library first when the host driver is old (see §1.2)
 export LD_LIBRARY_PATH=/ABS/PATH/cuda_compat_13/extracted:$LD_LIBRARY_PATH
 
 # —— AR (autoregressive) ——
-MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash serve_ar.sh
+MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vLLM/serve.sh
 
 # —— DFlash (speculative decoding) ——
-MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash serve_dflash.sh
+MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/DFlash/serve_DFlash.sh
 ```
 
 Readiness: AR ~1-2 min; **DFlash's first load includes torch.compile, ~3-5 min**.
@@ -266,15 +269,17 @@ Readiness: AR ~1-2 min; **DFlash's first load includes torch.compile, ~3-5 min**
 curl -sf http://127.0.0.1:8000/v1/models
 ```
 
-**serve_ar.sh** variables: `MODEL_PATH` (required) / `GPU` / `PORT` /
-`GPU_MEM_UTIL` (default 0.85) / `MAX_MODEL_LEN` / `SERVED_NAME`.
-**serve_dflash.sh** adds: `DFLASH_PATH` (default: `hyocr_dflash` next to the
-script) / `NUM_SPEC_TOKENS` (default 15). Under the hood, DFlash adds one flag
-over AR: `--speculative-config '{"method":"dflash","model":"<DFLASH_PATH>","num_speculative_tokens":15}'`.
+**`inference/vLLM/serve.sh`** variables: `MODEL_PATH` (required) / `GPU` / `PORT` /
+`GPU_MEM_UTIL` (default 0.9) / `MAX_MODEL_LEN` / `SERVED_NAME`.
+**`inference/DFlash/serve_DFlash.sh`** takes the same set plus `DFLASH_PATH`
+(default `${MODEL_PATH}/dflash`) / `NUM_SPEC_TOKENS` (default 15); it sets
+`GPU_MEM_UTIL` to 0.85 by default to leave headroom for the draft (~0.7 GB).
+Under the hood, DFlash adds one flag over AR:
+`--speculative-config '{"method":"dflash","model":"<DFLASH_PATH>","num_speculative_tokens":15}'`.
 
 > **Multi-GPU (full 8-GPU):** launch one instance per GPU (`GPU=0 PORT=8000` …
 > `GPU=7 PORT=8007`, each with `LD_LIBRARY_PATH`), then run
-> `batch_infer.py --ports 8000,8001,...,8007`.
+> `python inference/vLLM/batch_infer.py --ports 8000,8001,...,8007`.
 
 Stop the server: `pkill -9 -f "VLLM::EngineCore"; pkill -9 -f "vllm serve"`
 
@@ -282,12 +287,13 @@ Stop the server: `pkill -9 -f "VLLM::EngineCore"; pkill -9 -f "vllm serve"`
 
 ## 4. Inference
 
-> The clients (`infer_vllm_client.py`, `batch_infer.py`) are byte-for-byte
-> identical to Setup A/C, and they import the shared task prompts + output
-> utilities from `../utils/hunyuan_tasks.py` and `../utils/hunyuan_utils.py`
-> (a single copy, no per-setup duplicates). Sampling parameters, task prompts,
-> and post-processing are therefore identical, so AR / DFlash / transformers
-> outputs are directly comparable.
+> AR and DFlash share the same clients — `inference/vLLM/infer_vllm_client.py`
+> (single image) and `inference/vLLM/batch_infer.py` (batch). They import the
+> shared task prompts + output utilities from
+> `inference/utils/hunyuan_tasks.py` and `inference/utils/hunyuan_utils.py`
+> (a single copy). Sampling parameters, task prompts, and post-processing are
+> therefore identical, so AR / DFlash / transformers outputs are directly
+> comparable.
 
 ### Sampling parameters (aligned with the official settings, built in, do not change)
 
@@ -297,14 +303,14 @@ generation + tail-repetition early-stop + tail-repetition cleanup.
 ### Single image
 
 ```bash
-python infer_vllm_client.py --image /path/doc.png --task-type doc_parse \
+python inference/vLLM/infer_vllm_client.py --image /path/doc.png --task-type doc_parse \
     --model tencent/HunyuanOCR --port 8000 --max-tokens 32768
 ```
 
 ### Batch (directory)
 
 ```bash
-python batch_infer.py --image-dir /path/imgs --out-dir /path/out \
+python inference/vLLM/batch_infer.py --image-dir /path/imgs --out-dir /path/out \
     --ports 8000 --task-type doc_parse --max-tokens 32768 --concurrency 16
 ```
 
@@ -317,7 +323,7 @@ python batch_infer.py --image-dir /path/imgs --out-dir /path/out \
 ## 5. Task types
 
 `--task-type` selects the official recommended prompt. List them all:
-`python infer_vllm_client.py --list-tasks`
+`python inference/vLLM/infer_vllm_client.py --list-tasks`
 
 | task_type          | Description                                                                                                |
 | ------------------ | ---------------------------------------------------------------------------------------------------------- |
@@ -342,19 +348,22 @@ python batch_infer.py --image-dir /path/imgs --out-dir /path/out \
 ## 6. Files
 
 ```
-nightly/
-├── README.md               # this file
-├── requirements.txt        # nightly/cu130 + CUDA 13 compat install notes + exact validated versions
-├── serve_ar.sh             # single-GPU vLLM AR launch script
-├── serve_dflash.sh         # single-GPU vLLM + DFlash launch script (adds --speculative-config over AR)
+inference/DFlash/
+└── serve_DFlash.sh         # single-GPU vLLM + DFlash launch script (adds --speculative-config over AR)
+
+inference/vLLM/             # shared with the AR path (see archive/vLLM.md)
+├── serve.sh                # single-GPU vLLM AR launch script
 ├── infer_vllm_client.py    # single-image client   ┐ shared logic with Setup A/C;
-├── batch_infer.py          # batch inference       ┘ outputs comparable
-└── hyocr_dflash/           # DFlash draft: config + dflash.py + tokenizer (model.safetensors downloaded from HF, see §2)
+└── batch_infer.py          # batch inference       ┘ outputs comparable
 ```
+
+> The DFlash draft (config + dflash.py + tokenizer + model.safetensors) is not
+> committed to Git; it comes from the `dflash/` subfolder of the HF model repo
+> and is downloaded together with the base model (see §2).
 
 > Shared helpers (`hunyuan_tasks.py` = task_type → prompt, `hunyuan_utils.py` =
 > output utils incl. doc_parse normalization) live in a single copy at
-> `../utils/` and are imported by all three setups (A/B/C).
+> `inference/utils/` and are imported by all three setups (A/B/C).
 
 > The `vision_config.max_image_size` in `config.json` is the positional-encoding
 > table shape (a model-structure parameter) and **must not** be treated as a

@@ -1,5 +1,7 @@
 # Speed Benchmark
 
+[中文阅读](./benchmark_zh.md)
+
 ## Setup
 
 - **Hardware**: single NVIDIA H20 (80 GB) per server
@@ -37,7 +39,7 @@ Comparison with other open-source OCR VLMs, all under identical eval conditions 
 
 ## Reproducing These Numbers
 
-1. Deploy your desired inference server (see `docs/inference.md`)
+1. Deploy your desired inference server (see `docs/inference/inference.md`)
 2. Run a compatible benchmark script — a minimal example:
 
 ```python

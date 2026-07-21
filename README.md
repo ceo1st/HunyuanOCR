@@ -2,31 +2,21 @@
 
 [中文阅读](./README_zh.md)
 
-</div>
+# HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better <!-- omit in toc -->
 
-<div align="center">
+<img src="./assets/HyOCR_1_5_teaser.png" width="90%"/> <br>
 
-# HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better
-
-</div>
-
-<p align="center">
- <img src="./assets/HyOCR_1_5_teaser.png" width="90%"/> <br>
-</p>
-
-<p align="center">
 <a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 HF Model</b></a> |
 <a href="https://arxiv.org/pdf/2607.04884"><b>📄 Paper</b></a>
-</p>
+
+</div>
 
 > [!NOTE]
-> 👉 Looking for the original **HunyuanOCR-1.0** release? Switch to the
-> [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) branch, or read
-> [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
+> 👉 Looking for the original **HunyuanOCR-1.0** release? Switch to the [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) branch, or read [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
 
 ---
 
-## 🔥 News
+## 🔥 News <!-- omit in toc -->
 
 - **[2026/07/13]** 📊 We open-sourced [**CHAOS-Bench**](./benchmarks/CHAOS-Bench), a character-level hallucination benchmark that probes the "seeing-is-believing" ability of OCR VLMs by injecting character-level corruptions into academic-paper images.
 - **[2026/07/07]** 🚀 We released **HunyuanOCR-1.5**, a systematic upgrade that makes lightweight end-to-end OCR **faster and better** via DFlash speculative decoding, PC-side llama.cpp deployment, an Agentic Data Flow, and an upgraded training recipe. Check out the [paper](https://arxiv.org/pdf/2607.04884).
@@ -46,16 +36,30 @@
 
 ---
 
+## 📌 Contents <!-- omit in toc -->
+
+- [📖 Introduction](#-introduction)
+- [⚙️ Environment](#️-environment)
+  - [Training](#training)
+  - [Inference](#inference)
+- [🚀 Training](#-training)
+  - [1. Prepare packed training data](#1-prepare-packed-training-data)
+  - [2. SFT the HunyuanOCR base model](#2-sft-the-hunyuanocr-base-model)
+  - [3. Train the DFlash draft model — from scratch](#3-train-the-dflash-draft-model--from-scratch)
+  - [4. Continue-finetune from an existing DFlash checkpoint](#4-continue-finetune-from-an-existing-dflash-checkpoint)
+- [🧪 Inference](#-inference)
+  - [Environment setup](#environment-setup)
+  - [Download the weights](#download-the-weights)
+  - [Quick start (vLLM AR, single GPU)](#quick-start-vllm-ar-single-gpu)
+  - [PC-side deployment via llama.cpp](#pc-side-deployment-via-llamacpp)
+- [📖 Documentation](#-documentation)
+- [📚 Citation](#-citation)
+
 ## 📖 Introduction
 
-**HunyuanOCR-1.5** is a lightweight, end-to-end OCR-specialized vision-language model. It targets a
-broad range of text-centric visual tasks and unifies **document parsing, text spotting, information
-extraction, text-image translation** within a single
-end-to-end VLM.
+**HunyuanOCR-1.5** is a lightweight, end-to-end OCR-specialized vision-language model. It targets a broad range of text-centric visual tasks and unifies **document parsing, text spotting, information extraction, text-image translation** within a single end-to-end VLM.
 
-Building upon the validated lightweight architecture of HunyuanOCR-1.0, HunyuanOCR-1.5 does **not**
-redesign the model backbone. Instead, it performs a systematic upgrade around two goals — **making
-the model faster and better**:
+Building upon the validated lightweight architecture of HunyuanOCR-1.0, HunyuanOCR-1.5 does **not** redesign the model backbone. Instead, it performs a systematic upgrade around two goals — **making the model faster and better**:
 
 - ⚡ **Faster — DFlash inference acceleration.**
   End-to-end OCR is often accompanied by long autoregressive decoding, which becomes the major
@@ -109,27 +113,29 @@ pip install flash-attn --no-build-isolation
 
 ### Inference
 
-Inference is split into **three self-contained, mutually exclusive setups** under
-[`inference/`](inference). vLLM (AR / DFlash) and native transformers inference
-require different, incompatible `transformers` versions and **cannot share one
-environment** — this is a validated constraint, not a preference:
+Inference now uses a **single unified environment** (built on `uv`, requires
+CUDA 13) that runs all three configurations from the same install: **vLLM AR,
+DFlash speculative decoding, and native transformers**. Accuracy alignment
+across the three has been verified.
 
-| Setup                                              |       vLLM       | DFlash accel. | transformers | CUDA        | Best for                 |
-| -------------------------------------------------- | :--------------: | :-----------: | :----------: | ----------- | ------------------------ |
-| [`inference/vllm_0_18_1`](inference/vllm_0_18_1)   | 0.18.1 (release) |      ❌       |      ❌      | 12.x        | simplest setup, AR only  |
-| [`inference/nightly`](inference/nightly)           |     nightly      |      ✅       |      ❌      | 13          | AR + DFlash acceleration |
-| [`inference/transformers`](inference/transformers) |        —         |       —       |  ✅ 5.13.0   | host driver | native HF inference      |
+```bash
+pip install uv
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install "vllm>=0.25.1"
+uv pip install --no-build-isolation --no-cache-dir "flash-attn==2.8.3"
+```
 
-Each subfolder ships its own README and `requirements.txt`. See
-[`inference/README.md`](inference/README.md) for the selection guide and the full
-rationale, and [`docs/inference.md`](docs/inference.md) for performance tuning.
+The inference code lives under [`inference/`](inference)
+(`inference/vLLM`, `inference/DFlash`, `inference/transformers`). See
+[`docs/inference/inference.md`](docs/inference/inference.md) for the full setup
+and usage. If you lack CUDA 13 or only need one configuration, that document
+also points to the lighter per-configuration recipes.
 
 ---
 
 ## 🚀 Training
 
-All training scripts live under `scripts/` and share `scripts/env_common.sh` for distributed env
-variables. Multi-node training is supported via the standard
+All training scripts live under `scripts/` and share `scripts/env_common.sh` for distributed env variables. Multi-node training is supported via the standard
 `NNODES` / `NODE_RANK` / `MASTER_ADDR` / `MASTER_PORT` env vars.
 
 ### 1. Prepare packed training data
@@ -192,7 +198,7 @@ Recommended profile: `lr=2e-5`, `epochs=10`, `warmup_ratio=0.05`, `save_steps=50
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
-DFLASH_INIT=/path/to/hyocr_dflash/existing_checkpoint \
+DFLASH_INIT=/path/to/existing/dflash/checkpoint \
 TRAIN_DATA=./data/parsing_packed_20480.jsonl \
 NPROC_PER_NODE=8 \
 bash scripts/sft_dflash_finetune.sh
@@ -204,22 +210,32 @@ Entry: [`train/train_draft_from_dflash.py`](train/train_draft_from_dflash.py).
 
 ## 🧪 Inference
 
-HunyuanOCR-1.5 provides three server/inference setups under [`inference/`](inference),
-plus an optional PC-side path via llama.cpp. All three share the same weights and
-the same task-type prompts + sampling + post-processing, so their outputs are
-directly comparable.
+HunyuanOCR-1.5 uses a **single unified environment** under [`inference/`](inference)
+that runs three server/inference configurations — **vLLM AR**, **DFlash
+speculative decoding**, and **native transformers** — plus an optional PC-side
+path via llama.cpp. All configurations share the same weights and the same
+task-type prompts + sampling + post-processing, so their outputs are directly
+comparable, and we have verified their accuracy alignment.
 
-- **A. vLLM 0.18.1 (release, CUDA 12) — AR only.** Simplest to install; native
-  HunyuanOCR support, no nightly or patch. → [`inference/vllm_0_18_1`](inference/vllm_0_18_1)
-- **B. vLLM nightly (CUDA 13) — AR + DFlash speculative decoding.** Lossless
-  acceleration for long outputs; draft config/code bundled, weight pulled from HF. → [`inference/nightly`](inference/nightly)
-- **C. HuggingFace transformers 5.13.0 — native multi-GPU inference.** For
-  alignment / accuracy checks; no vLLM. → [`inference/transformers`](inference/transformers)
-- **D. llama.cpp — CPU / consumer-GPU / laptop.** GGUF deployment (see below).
+- **vLLM AR** — autoregressive serving. → [`inference/vLLM`](inference/vLLM)
+- **DFlash** — AR + DFlash speculative decoding (lossless acceleration for long
+  outputs). → [`inference/DFlash`](inference/DFlash)
+- **transformers** — native multi-GPU HuggingFace inference (alignment / accuracy
+  checks). → [`inference/transformers`](inference/transformers)
+- **llama.cpp** — CPU / consumer-GPU / laptop, GGUF deployment (see below).
 
-> ⚠️ Setups A / B / C are **mutually exclusive environments**: vLLM and native
-> transformers require incompatible `transformers` versions. Read
-> [`inference/README.md`](inference/README.md) before choosing.
+> The unified environment requires **CUDA 13**. If you lack CUDA 13 or only need
+> one configuration, see [`docs/inference/inference.md`](docs/inference/inference.md) for the lighter
+> per-configuration recipes.
+
+### Environment setup
+
+```bash
+pip install uv
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install "vllm>=0.25.1"
+uv pip install --no-build-isolation --no-cache-dir "flash-attn==2.8.3"
+```
 
 ### Download the weights
 
@@ -232,12 +248,11 @@ The download contains both the base model and the `dflash/` draft model.
 
 ### Quick start (vLLM AR, single GPU)
 
-Install per [`inference/vllm_0_18_1/requirements.txt`](inference/vllm_0_18_1/requirements.txt),
-then launch the OpenAI-compatible server (served as `tencent/HunyuanOCR`,
-`-tp 1`, `--max-model-len 131072`):
+Launch the OpenAI-compatible server (served as `tencent/HunyuanOCR`, `-tp 1`,
+`--max-model-len 131072`):
 
 ```bash
-MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vllm_0_18_1/serve.sh
+MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vLLM/serve.sh
 curl -sf http://127.0.0.1:8000/v1/models     # readiness check
 ```
 
@@ -247,7 +262,7 @@ Send a single image. The prompt is locked to an official task type via
 tail-repetition early-stop / cleanup are built in:
 
 ```bash
-python inference/vllm_0_18_1/infer_vllm_client.py \
+python inference/vLLM/infer_vllm_client.py \
     --image /path/to/document.png --task-type doc_parse \
     --model tencent/HunyuanOCR --port 8000 --max-tokens 32768
 ```
@@ -255,15 +270,16 @@ python inference/vllm_0_18_1/infer_vllm_client.py \
 Batch inference over a directory (multi-endpoint concurrency, resumable):
 
 ```bash
-python inference/vllm_0_18_1/batch_infer.py \
+python inference/vLLM/batch_infer.py \
     --image-dir /path/to/images --out-dir /path/to/output \
     --ports 8000 --task-type doc_parse --max-tokens 32768 --concurrency 16
 ```
 
-For **DFlash acceleration**, use [`inference/nightly`](inference/nightly)
-(`serve_dflash.sh`); for **native transformers**, use
-[`inference/transformers`](inference/transformers). Each subfolder README has the
-full environment recipe, the task-type table, and multi-GPU instructions.
+For **DFlash acceleration**, use [`inference/DFlash`](inference/DFlash)
+(`serve_DFlash.sh`); for **native transformers**, use
+[`inference/transformers`](inference/transformers). See
+[`docs/inference/inference.md`](docs/inference/inference.md) for the full setup, the task-type table,
+and multi-GPU instructions.
 
 ### PC-side deployment via llama.cpp
 
@@ -282,7 +298,7 @@ cmake -B build -DLLAMA_BUILD_EXAMPLES=ON     # add -DGGML_CUDA=ON for NVIDIA GPU
 cmake --build ./build --config Release -j
 
 # 2. Convert HunyuanOCR to GGUF (base + mmproj)
-hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR
+hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
 python3 convert_hf_to_gguf.py --outfile ./HunyuanOCR/hyocr-f16.gguf        --outtype f16 ./HunyuanOCR
 python3 convert_hf_to_gguf.py --outfile ./HunyuanOCR/mmproj-hyocr-f16.gguf --outtype f16 --mmproj ./HunyuanOCR
 
@@ -306,7 +322,7 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
 
 - [`docs/training.md`](docs/training.md) — training modes, hyperparameters, distributed setup
 - [`docs/data_format.md`](docs/data_format.md) — raw OCR JSONL schema and packing pipeline
-- [`docs/inference.md`](docs/inference.md) — vLLM install (nightly, DFlash included) and deployment tuning
+- [`docs/inference/inference.md`](docs/inference/inference.md) — unified inference environment (vLLM AR / DFlash / transformers) + deployment tuning
 - [`docs/llama_cpp.md`](docs/llama_cpp.md) — PC-side deployment with llama.cpp (community & DFlash-adapted fork)
 - [`docs/benchmark.md`](docs/benchmark.md) — end-to-end speed benchmark
 
@@ -368,7 +384,7 @@ see [`docs/llama_cpp.md`](docs/llama_cpp.md) for the complete guide.
 
 ---
 
-## 🙏 Acknowledgements
+## 🙏 Acknowledgements <!-- omit in toc -->
 
 We would like to thank [Qwen](https://github.com/QwenLM/Qwen3.6) and [DFlash](https://github.com/z-lab/dflash) for their valuable models and ideas.
 
@@ -376,7 +392,7 @@ Special thanks to the Hugging Face community for their Day-0 support.
 
 ---
 
-## 📜 License
+## 📜 License <!-- omit in toc -->
 
 HunyuanOCR-1.5 is released under the same license as HunyuanOCR-1.0 —
 the **Tencent Hunyuan Community License Agreement**. See [`LICENSE`](LICENSE) for the full terms.

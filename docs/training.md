@@ -1,5 +1,7 @@
 # Training Guide
 
+[中文阅读](./training_zh.md)
+
 This document describes the three training modes supported by this repo:
 
 1. **SFT the base HunyuanOCR model** (full end-to-end fine-tuning)
@@ -86,6 +88,20 @@ TRAIN_DATA=./data/parsing_packed_20480.jsonl \
 | `LOOP_NUM`         |     `1` | MTP-style iteration count         |
 | `SAVE_STEPS`       |  `2000` | Checkpoint every N steps          |
 
+### Draft config template
+
+The draft-model architecture (layers, hidden size, block size, ...) is loaded
+from a small template directory containing `config.json` + `dflash.py`. Default:
+[`train/configs/`](../train/configs) (bundled with the repo). Override with the
+env var `HYOCR_DFLASH_CONFIG_DIR` to point at any directory that ships the same
+two files, for example the `dflash/` subfolder that comes with the HuggingFace
+HunyuanOCR release:
+
+```bash
+HYOCR_DFLASH_CONFIG_DIR=/path/to/HunyuanOCR/dflash \
+    bash scripts/sft_dflash.sh
+```
+
 ### Output
 
 Training produces:
@@ -94,7 +110,7 @@ Training produces:
 - `output/{run_name}/config.json` — DFlash draft config
 - `output/{run_name}/checkpoint-XXXX/` — intermediate checkpoints
 
-Only `model.safetensors` + `config.json` + your `dflash.py` are needed for inference; see [`inference.md`](inference.md).
+Only `model.safetensors` + `config.json` + your `dflash.py` are needed for inference; see [`docs/inference/inference.md`](inference/inference.md).
 
 ---
 
@@ -126,6 +142,10 @@ TRAIN_DATA=./data/domain_packed_20480.jsonl \
 | `WARMUP`      |       `0.05` | Slightly longer warmup                |
 | `SAVE_STEPS`  |        `500` | ~10 ckpts over full run               |
 | `DFLASH_INIT` | _(required)_ | Path to existing draft checkpoint dir |
+
+The draft config is loaded from `DFLASH_INIT` when it points at a valid
+directory; otherwise the loader falls back to `HYOCR_DFLASH_CONFIG_DIR`
+(default: `train/configs/`).
 
 ### Empirical results (v3 vs v1 on 930 OCR eval set)
 

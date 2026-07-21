@@ -1,5 +1,7 @@
 # PC-side deployment with llama.cpp
 
+[中文阅读](./llama_cpp_zh.md)
+
 HunyuanOCR-1.5 can be deployed on **CPU / consumer GPU / laptop** via
 [`llama.cpp`](https://github.com/ggml-org/llama.cpp), converting the base model
 (and optionally the DFlash draft) to the GGUF format and serving via
@@ -42,7 +44,7 @@ uv pip install huggingface_hub transformers torch openai
 ### 1.3 Download HunyuanOCR weights and convert to GGUF
 
 ```bash
-hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR
+hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
 
 # Language / decoder weights → hyocr-f16.gguf
 python3 convert_hf_to_gguf.py \

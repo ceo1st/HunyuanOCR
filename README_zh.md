@@ -2,31 +2,21 @@
 
 [English Version](./README.md)
 
-</div>
+# HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better <!-- omit in toc -->
 
-<div align="center">
+<img src="./assets/HyOCR_1_5_teaser.png" width="90%"/> <br>
 
-# HunyuanOCR-1.5: Making Lightweight OCR VLMs Faster and Better
-
-</div>
-
-<p align="center">
- <img src="./assets/HyOCR_1_5_teaser.png" width="90%"/> <br>
-</p>
-
-<p align="center">
 <a href="https://huggingface.co/tencent/HunyuanOCR"><b>🤗 HF 模型</b></a> |
 <a href="https://arxiv.org/pdf/2607.04884"><b>📄 论文</b></a>
-</p>
+
+</div>
 
 > [!NOTE]
-> 👉 需要原始的 **HunyuanOCR-1.0** 版本？请切换到
-> [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) 分支，或阅读
-> [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
+> 👉 需要原始的 **HunyuanOCR-1.0** 版本？请切换到 [`v1.0`](https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/v1.0) 分支，或阅读 [`README_v1.0.md`](./HunyuanOCR_v1.0/README_v1.0.md) · [`README_zh_v1.0.md`](./HunyuanOCR_v1.0/README_zh_v1.0.md)。
 
 ---
 
-## 🔥 最新动态
+## 🔥 最新动态 <!-- omit in toc -->
 
 - **[2026/07/13]** 📊 我们开源了 [**CHAOS-Bench**](./benchmarks/CHAOS-Bench)，一个字符级幻觉评测基准：通过在学术论文图像中注入字符级篡改，检验 OCR VLM 的"所见即所得"能力。
 - **[2026/07/07]** 🚀 我们发布 **HunyuanOCR-1.5**，通过 DFlash 投机解码、llama.cpp PC 端部署、Agentic Data Flow 及优化后的训练配方，对轻量级端到端 OCR 进行系统性升级，实现**更快、更强**。详见[论文](https://arxiv.org/pdf/2607.04884)。
@@ -46,19 +36,38 @@
 
 ---
 
+## 📌 目录 <!-- omit in toc -->
+
+- [📖 简介](#-简介)
+- [⚙️ 环境](#️-环境)
+  - [训练](#训练)
+  - [推理](#推理)
+- [🚀 训练](#-训练)
+  - [1. 准备打包（packed）后的训练数据](#1-准备打包packed后的训练数据)
+  - [2. 对 HunyuanOCR 基座模型进行 SFT](#2-对-hunyuanocr-基座模型进行-sft)
+  - [3. 从零训练 DFlash 草稿模型](#3-从零训练-dflash-草稿模型)
+  - [4. 从已有 DFlash 检查点继续微调](#4-从已有-dflash-检查点继续微调)
+- [🧪 推理](#-推理)
+  - [环境安装](#环境安装)
+  - [下载权重](#下载权重)
+  - [快速开始（vLLM AR，单卡）](#快速开始vllm-ar单卡)
+  - [PC 端部署（llama.cpp）](#pc-端部署llamacpp)
+- [📖 文档](#-文档)
+- [📚 引用](#-引用)
+
 ## 📖 简介
 
 **HunyuanOCR-1.5** 是一款轻量化的端到端 OCR 专用视觉语言模型（VLM）。它面向广泛的以文字为中心的视觉任务，将**文档解析、文字检测识别（Text Spotting）、信息抽取、图文翻译**统一到单个端到端 VLM 中。
 
 在延续 HunyuanOCR-1.0 已验证的轻量化架构基础上，HunyuanOCR-1.5 **并未**重新设计模型主干，而是围绕**"更快、更强"**两个目标进行系统性升级：
 
-- ⚡ **更快 —— DFlash 推理加速。**
+- ⚡ **更快：DFlash 推理加速。**
   端到端 OCR 通常伴随较长的自回归解码，这在稠密文档、表格、公式等长结构化输出场景中会成为主要瓶颈。HunyuanOCR-1.5 适配了基于 **DFlash** 的投机解码（speculative decoding）框架：一个轻量的块扩散（block-diffusion）草稿模型并行起草多个候选 token，再由目标模型一次性验证。这显著降低了长结构化输出的解码延迟，同时**保持目标模型的输出分布不变**。
 
 - 💻 **PC 端部署（llama.cpp）。**
-  除了服务器级的 vLLM，HunyuanOCR-1.5 还支持通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 在 **CPU / 消费级 GPU / 笔记本** 上部署：使用转换后的 GGUF 权重和 OpenAI 兼容的 `llama-server`。同时我们还提供了一个适配 DFlash 的 `llama.cpp` 分支，因此同样的投机解码加速在 PC 端也可用。详见 [`docs/llama_cpp.md`](docs/llama_cpp.md)。
+  除了服务器级的 vLLM，HunyuanOCR-1.5 还支持通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 在 **CPU / 消费级 GPU / 笔记本** 上部署：使用转换后的 GGUF 权重和 OpenAI 兼容的 `llama-server`。同时我们还提供了一个适配 DFlash 的 `llama.cpp` 分支，因此同样的投机解码加速在 PC 端也可用。详见 [`docs/llama_cpp_zh.md`](docs/llama_cpp_zh.md)。
 
-- 🧠 **更强 —— Agentic Data Flow + 升级的训练配方。**
+- 🧠 **更强：Agentic Data Flow + 升级的训练配方。**
   在数据侧，我们提出 **Agentic Data Flow**，一套由智能体驱动的数据构造系统，能把模型的短板转化为可执行的数据需求。智能体深度参与素材检索、基于工具的校验、样本清洗与数据流水线开发，并与算法工程师形成闭环迭代。在 HunyuanOCR-1.5 中，该系统被用于**低资源 OCR、古文字 OCR、多图文字类 QA** 等长尾能力的定向补强。
   在训练侧，我们对配方进行了系统性升级：预训练 Stage-3 被重新规划，纳入新产出的能力数据、多图数据与历史 OCR 数据，最大图像分辨率扩展到 **4K**、上下文窗口扩展到 **128K**；后训练阶段则优化 SFT 数据，并进一步在不同 OCR 任务上探索强化学习（RL），以放大 RL 带来的收益。
 
@@ -83,18 +92,16 @@ pip install flash-attn --no-build-isolation
 
 ### 推理
 
-推理拆分为 [`inference/`](inference) 下的**三套自包含、互斥的环境**。vLLM（AR / DFlash）
-与原生 transformers 推理需要**不兼容的 `transformers` 版本，无法共存于同一环境**——
-这是实测验证的硬约束，而非偏好：
+推理现已统一为**单一环境**（基于 `uv`，需要 CUDA 13），一套环境即可运行三种配置：**vLLM AR、DFlash 投机解码、原生 transformers**，并已验证三者精度对齐。
 
-| 方案                                               |       vLLM       | DFlash 加速 | transformers | CUDA         | 适用             |
-| -------------------------------------------------- | :--------------: | :---------: | :----------: | ------------ | ---------------- |
-| [`inference/vllm_0_18_1`](inference/vllm_0_18_1)   | 0.18.1（正式版） |     ❌      |      ❌      | 12.x         | 最省心，仅 AR    |
-| [`inference/nightly`](inference/nightly)           |     nightly      |     ✅      |      ❌      | 13           | AR + DFlash 加速 |
-| [`inference/transformers`](inference/transformers) |        —         |      —      |  ✅ 5.13.0   | 匹配宿主驱动 | 原生 HF 推理     |
+```bash
+pip install uv
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install "vllm>=0.25.1"
+uv pip install --no-build-isolation --no-cache-dir "flash-attn==2.8.3"
+```
 
-每套子目录各自附带独立的 README 和 `requirements.txt`。选型指南与完整原因见
-[`inference/README.md`](inference/README.md)，性能调优见 [`docs/inference.md`](docs/inference.md)。
+推理代码位于 [`inference/`](inference)（`inference/vLLM`、`inference/DFlash`、`inference/transformers`）。完整安装、用法，以及在没有 CUDA 13 或仅需其中一种配置时的轻量单配置方案，详见 [`docs/inference/inference_zh.md`](docs/inference/inference_zh.md)。
 
 ---
 
@@ -108,10 +115,10 @@ pip install flash-attn --no-build-isolation
 我们先对每个原始 OCR JSONL 做分词，再把多个样本打包到长度上限
 `packed_max_length=20480` 的单条序列中，以最大化 GPU 利用率。
 
-**步骤 1** —— 在 `configs/data_list.txt` 中每行填入一个绝对路径，指向一个原始 OCR JSONL 文件。
-JSONL 的数据格式说明见 [`docs/data_format.md`](docs/data_format.md)。
+**步骤 1**：在 `configs/data_list.txt` 中每行填入一个绝对路径，指向一个原始 OCR JSONL 文件。
+JSONL 的数据格式说明见 [`docs/data_format_zh.md`](docs/data_format_zh.md)。
 
-**步骤 2** —— 运行多进程的计数与打包流水线：
+**步骤 2**：运行多进程的计数与打包流水线：
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
@@ -122,7 +129,7 @@ THREADS_PER_PROCESS=8 \
 bash scripts/pack_data.sh
 ```
 
-输出：`./data/parsing_packed_20480.jsonl` —— 一个序列打包好、可直接用于训练的 JSONL。
+输出 `./data/parsing_packed_20480.jsonl`：一个序列打包好、可直接用于训练的 JSONL。
 
 该流水线的实现见 [`tools/pipeline_count_and_pack.py`](tools/pipeline_count_and_pack.py)
 和 [`tools/pack_from_counted.py`](tools/pack_from_counted.py)。
@@ -140,7 +147,7 @@ bash scripts/sft_base.sh
 ```
 
 入口：[`train/train_hunyuan.py`](train/train_hunyuan.py)。
-完整参数列表见 [`docs/training.md`](docs/training.md)。
+完整参数列表见 [`docs/training_zh.md`](docs/training_zh.md)。
 
 ### 3. 从零训练 DFlash 草稿模型
 
@@ -163,7 +170,7 @@ bash scripts/sft_dflash.sh
 
 ```bash
 MODEL_PATH=/path/to/HunyuanOCR/base/model \
-DFLASH_INIT=/path/to/hyocr_dflash/existing_checkpoint \
+DFLASH_INIT=/path/to/existing/dflash/checkpoint \
 TRAIN_DATA=./data/parsing_packed_20480.jsonl \
 NPROC_PER_NODE=8 \
 bash scripts/sft_dflash_finetune.sh
@@ -175,20 +182,23 @@ bash scripts/sft_dflash_finetune.sh
 
 ## 🧪 推理
 
-HunyuanOCR-1.5 在 [`inference/`](inference) 下提供三套服务 / 推理环境，另加一个可选的
-PC 端 llama.cpp 路径。三套共享同一份权重、同一套 task-type prompt + 采样 + 后处理，
-输出可直接横向对比。
+HunyuanOCR-1.5 在 [`inference/`](inference) 下使用**单一统一环境**，一套环境即可运行三种服务 / 推理配置：**vLLM 自回归生成、DFlash 投机解码、原生 transformers**，另加一个可选的 PC 端 llama.cpp 路径。所有配置共享同一份权重、同一套 task-type prompt + 采样 + 后处理，输出可直接横向对比，且已验证三者精度对齐。
 
-- **A. vLLM 0.18.1（正式版，CUDA 12）—— 仅 AR。** 最省心：原生支持 HunyuanOCR，
-  无需 nightly、无需补丁。→ [`inference/vllm_0_18_1`](inference/vllm_0_18_1)
-- **B. vLLM nightly（CUDA 13）—— AR + DFlash 投机解码。** 对长输出无损加速；
-  内置草稿模型的配置与代码，权重从 HF 拉取。→ [`inference/nightly`](inference/nightly)
-- **C. HuggingFace transformers 5.13.0 —— 原生多卡推理。** 用于对齐 / 精度校验；
-  不经 vLLM。→ [`inference/transformers`](inference/transformers)
-- **D. llama.cpp —— CPU / 消费级 GPU / 笔记本。** GGUF 部署（见下文）。
+- **vLLM AR**：自回归服务。→ [`inference/vLLM`](inference/vLLM)
+- **DFlash**：AR + DFlash 投机解码，对长输出无损加速。→ [`inference/DFlash`](inference/DFlash)
+- **transformers**：HuggingFace 原生自回归推理。→ [`inference/transformers`](inference/transformers)
+- **llama.cpp**：CPU / 消费级 GPU / 笔记本，GGUF 部署（见下文）。
 
-> ⚠️ A / B / C 三套是**互斥环境**：vLLM 与原生 transformers 需要不兼容的
-> `transformers` 版本。选择前请先读 [`inference/README.md`](inference/README.md)。
+> 统一环境需要 **CUDA 13**。若没有 CUDA 13，或只需其中一种配置，可参考 [`docs/inference/inference_zh.md`](docs/inference/inference_zh.md) 里的轻量单配置方案。
+
+### 环境安装
+
+```bash
+pip install uv
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install "vllm>=0.25.1"
+uv pip install --no-build-isolation --no-cache-dir "flash-attn==2.8.3"
+```
 
 ### 下载权重
 
@@ -201,13 +211,13 @@ huggingface-cli download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "
 
 ### 快速开始（vLLM AR，单卡）
 
-按 [`inference/vllm_0_18_1/requirements.txt`](inference/vllm_0_18_1/requirements.txt)
-装好环境后，启动 OpenAI 兼容服务（对外服务名 `tencent/HunyuanOCR`、`-tp 1`、
-`--max-model-len 131072`）：
+启动 OpenAI 兼容服务（对外服务名 `tencent/HunyuanOCR`、`-tp 1`、`--max-model-len 131072`）：
 
 ```bash
-MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vllm_0_18_1/serve.sh
-curl -sf http://127.0.0.1:8000/v1/models     # 就绪检查
+MODEL_PATH=./HunyuanOCR GPU=0 PORT=8000 bash inference/vLLM/serve.sh
+
+# 就绪检查
+curl -sf http://127.0.0.1:8000/v1/models
 ```
 
 发送单张图片。提示词通过 `--task-type` 锁定为官方任务类型（`--list-tasks` 查看全部 12 种）；
@@ -215,7 +225,7 @@ curl -sf http://127.0.0.1:8000/v1/models     # 就绪检查
 与尾部重复早停 / 清洗均已内置：
 
 ```bash
-python inference/vllm_0_18_1/infer_vllm_client.py \
+python inference/vLLM/infer_vllm_client.py \
     --image /path/to/document.png --task-type doc_parse \
     --model tencent/HunyuanOCR --port 8000 --max-tokens 32768
 ```
@@ -223,22 +233,18 @@ python inference/vllm_0_18_1/infer_vllm_client.py \
 对整个目录做批量推理（多端点并发、可断点续跑）：
 
 ```bash
-python inference/vllm_0_18_1/batch_infer.py \
+python inference/vLLM/batch_infer.py \
     --image-dir /path/to/images --out-dir /path/to/output \
     --ports 8000 --task-type doc_parse --max-tokens 32768 --concurrency 16
 ```
 
-需要 **DFlash 加速**请用 [`inference/nightly`](inference/nightly)（`serve_dflash.sh`）；
+需要 **DFlash 加速**请用 [`inference/DFlash`](inference/DFlash)（`serve_DFlash.sh`）；
 需要**原生 transformers 推理**请用 [`inference/transformers`](inference/transformers)。
-每套子目录 README 都包含完整的环境安装步骤、任务类型表和多卡说明。
+完整的环境安装步骤、任务类型表和多卡说明详见 [`docs/inference/inference_zh.md`](docs/inference/inference_zh.md)。
 
 ### PC 端部署（llama.cpp）
 
-对于 **CPU / 消费级 GPU / 笔记本** 环境，HunyuanOCR-1.5 在将权重转换为 GGUF 后，也可以
-通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 部署。
-社区版 `llama.cpp`（仅支持 HunyuanOCR 基座）和一个适配 DFlash 的分支
-（[`wendadawen/llama.cpp @ dflash-adapt-hunyuanocr-hunyuanstyle`](https://github.com/wendadawen/llama.cpp/tree/dflash-adapt-hunyuanocr-hunyuanstyle)）
-都受支持。
+对于 **CPU / 消费级 GPU / 笔记本** 环境，HunyuanOCR-1.5 在将权重转换为 GGUF 后，也可以通过 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) 部署。社区版 `llama.cpp`（仅支持 HunyuanOCR 基座）和一个适配 DFlash 的分支（[`wendadawen/llama.cpp @ dflash-adapt-hunyuanocr-hunyuanstyle`](https://github.com/wendadawen/llama.cpp/tree/dflash-adapt-hunyuanocr-hunyuanstyle)）都受支持。
 
 最小化的构建与启动（社区版，不含 DFlash）：
 
@@ -249,7 +255,7 @@ cmake -B build -DLLAMA_BUILD_EXAMPLES=ON     # NVIDIA GPU 追加 -DGGML_CUDA=ON
 cmake --build ./build --config Release -j
 
 # 2. 将 HunyuanOCR 转换为 GGUF（base + mmproj）
-hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR
+hf download tencent/HunyuanOCR --local-dir ./HunyuanOCR --exclude "v1.0/*"
 python3 convert_hf_to_gguf.py --outfile ./HunyuanOCR/hyocr-f16.gguf        --outtype f16 ./HunyuanOCR
 python3 convert_hf_to_gguf.py --outfile ./HunyuanOCR/mmproj-hyocr-f16.gguf --outtype f16 --mmproj ./HunyuanOCR
 
@@ -261,21 +267,19 @@ build/bin/llama-server \
     --ctx-size 10240 --n-predict 4096
 ```
 
-适配 DFlash 的变体、草稿模型的权重转换，以及一个测试客户端
-（[`llama_cpp/chat.py`](llama_cpp/chat.py)，附带 [`llama_cpp/test_assets/`](llama_cpp/test_assets)
-下的 26 张示例 OCR 图片）：
+适配 DFlash 的变体、草稿模型的权重转换，以及一个测试客户端（[`llama_cpp/chat.py`](llama_cpp/chat.py)，附带 [`llama_cpp/test_assets/`](llama_cpp/test_assets)下的 26 张示例 OCR 图片）：
 
-完整指南参见 [`docs/llama_cpp.md`](docs/llama_cpp.md)。
+完整指南参见 [`docs/llama_cpp_zh.md`](docs/llama_cpp_zh.md)。
 
 ---
 
 ## 📖 文档
 
-- [`docs/training.md`](docs/training.md) —— 训练模式、超参数、分布式配置
-- [`docs/data_format.md`](docs/data_format.md) —— 原始 OCR JSONL 格式与打包流水线
-- [`docs/inference.md`](docs/inference.md) —— vLLM 安装（nightly，含 DFlash）与部署调优
-- [`docs/llama_cpp.md`](docs/llama_cpp.md) —— 使用 llama.cpp 的 PC 端部署（社区版 & DFlash 适配分支）
-- [`docs/benchmark.md`](docs/benchmark.md) —— 端到端速度基准测试
+- [`docs/training_zh.md`](docs/training_zh.md)：训练模式、超参数、分布式配置
+- [`docs/data_format_zh.md`](docs/data_format_zh.md)：原始 OCR JSONL 格式与打包流水线
+- [`docs/inference/inference_zh.md`](docs/inference/inference_zh.md)：统一推理环境（vLLM AR / DFlash / transformers）与部署调优
+- [`docs/llama_cpp_zh.md`](docs/llama_cpp_zh.md)：使用 llama.cpp 的 PC 端部署（社区版 & DFlash 适配分支）
+- [`docs/benchmark_zh.md`](docs/benchmark_zh.md)：端到端速度基准测试
 
 ---
 
@@ -335,7 +339,7 @@ build/bin/llama-server \
 
 ---
 
-## 🙏 致谢
+## 🙏 致谢 <!-- omit in toc -->
 
 我们衷心感谢 [Qwen](https://github.com/QwenLM/Qwen3.6) 与 [DFlash](https://github.com/z-lab/dflash)，感谢他们宝贵的模型与研究思路。
 
@@ -343,8 +347,6 @@ build/bin/llama-server \
 
 ---
 
-## 📜 许可证
+## 📜 许可证 <!-- omit in toc -->
 
-HunyuanOCR-1.5 采用与 HunyuanOCR-1.0 相同的许可证 ——
-**Tencent Hunyuan Community License Agreement（腾讯混元社区许可协议）**。
-完整条款见 [`LICENSE`](LICENSE)。
+HunyuanOCR-1.5 采用与 HunyuanOCR-1.0 相同的许可证：**Tencent Hunyuan Community License Agreement（腾讯混元社区许可协议）**。完整条款见 [`LICENSE`](LICENSE)。

@@ -2,21 +2,27 @@
 
 [中文阅读](./README_zh.md)
 
-# CHAOS-Bench
+# CHAOS-Bench <!-- omit in toc -->
 
 **C**haracter-level **H**allucination **A**ssessment for **O**CR **S**eeing-is-believing
 
-<p align="center">
- <img src="./CHAOS_Bench_vis.png" width="90%"/> <br>
-</p>
+<img src="./CHAOS_Bench_vis.png" width="90%"/> <br>
 
-</div>
-<p align="center">
 <a href="https://arxiv.org/abs/2607.04884"><b>📄 Paper</b></a> •
 <a href="https://github.com/Tencent-Hunyuan/HunyuanOCR"><b>💻 HunyuanOCR</b></a>
-</p>
+
+</div>
 
 ---
+
+## 📌 Contents <!-- omit in toc -->
+
+- [📖 Overview](#-overview)
+- [📊 Statistics](#-statistics)
+- [🗂️ Data Format](#️-data-format)
+  - [Example](#example)
+- [🧪 How to Evaluate](#-how-to-evaluate)
+- [📚 Citation](#-citation)
 
 ## 📖 Overview
 
