@@ -17,14 +17,13 @@ The inference code lives under [`inference/`](../../inference):
 
 ## Environment setup
 
-The unified environment is built on a single `uv` virtual environment. It
-**requires CUDA 13**.
+The unified environment is built on a single `uv` virtual environment. It **requires CUDA 13**.
 
 ```bash
 pip install uv
 
 uv venv --python 3.12 && source .venv/bin/activate
-uv pip install "vllm>=0.25.1"
+uv pip install "vllm>=0.25.1" runai-model-streamer
 uv pip install --no-build-isolation --no-cache-dir "flash-attn==2.8.3"
 ```
 
